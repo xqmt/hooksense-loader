@@ -1,4 +1,3 @@
--- ================= LinoriaLib (New UI) Setup =================
 local repo = "https://raw.githubusercontent.com/cloudsense-pub/UELinoriaLib/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
 local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
@@ -6,10 +5,10 @@ local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
 
 Library.ShowToggleFrameInKeybinds = true
 Library.ShowCustomCursor = true
-Library.NotifySide = "Left"
+Library.NotifySide = "Right"
 
 local Window = Library:CreateWindow({
-    Title = "hooksense",
+    Title = "hooksenseㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ",
     Center = true,
     AutoShow = true,
     Resizable = true,
@@ -20,7 +19,6 @@ local Window = Library:CreateWindow({
     MenuFadeTime = 0.2
 })
 
--- ================= [FIX] Linoria Tabs Overflow & Scroll Engine =================
 task.spawn(function()
     local MainFrame = Library.Main
     if MainFrame then
@@ -58,7 +56,6 @@ task.spawn(function()
     end
 end)
 
--- ================= Global Variables =================
 _G.SilentAimEnabled = false
 _G.BulletTPEnabled = false
 _G.WallCheckEnabled = false
@@ -69,14 +66,12 @@ _G.FOVSize = 100
 _G.FOVVisible = true
 _G.TracerEnabled = true
 
--- Mobile Aimbot Variables
 _G.MobileAimbotEnabled = false
 _G.AimbotSmoothness = 0.1
 _G.AutoPredictionEnabled = false
 _G.PredictionValue = 0.1
 _G.AimbotTargetPart = "Head"
 
--- New Added Smooth Variables
 _G.JumpSmooth = 1
 _G.SmoothX = 1
 _G.SmoothZ = 1
@@ -125,6 +120,7 @@ _G.TracerLineColor = Color3.fromRGB(255, 0, 0)
 _G.TracerLineOutlineColor = Color3.fromRGB(0, 0, 0)
 _G.TracerThickness = 1.0
 _G.TracerOutlineThickness = 3.0
+
 _G.FOVFillEnabled = false
 _G.FOVFillTransparency = 0.2
 _G.FOVFillColor1 = Color3.fromRGB(255, 0, 0)
@@ -132,6 +128,7 @@ _G.FOVFillColor2 = Color3.fromRGB(0, 255, 0)
 _G.FOVFillColor3 = Color3.fromRGB(0, 0, 255)
 _G.FOVFillRotateEnabled = false
 _G.FOVFillRotateSpeed = 1
+local currentRotationAngle = 0
 
 _G.TargetPartMode = "Head"
 _G.TransitionSpeed = 5
@@ -165,7 +162,6 @@ local CurrentWeatherEffect = nil
 local DisplayNameLabel, UsernameLabel, UserIdLabel
 local ESP_Storage = {}
 
--- ================= Custom Hit Notification Engine =================
 local HitNotifyGui = Instance.new("ScreenGui")
 HitNotifyGui.Name = "hooksense_HitNotifyGui"
 HitNotifyGui.ResetOnSpawn = false
@@ -295,7 +291,6 @@ local function ShowCustomHitNotification(targetName, partName, damage)
     end)
 end
 
--- ================= Play Hit Sound Function =================
 local function PlayHitSound()
     if _G.HitSoundMode == "None" or not SoundIDs[_G.HitSoundMode] then return end
     local Sound = Instance.new("Sound")
@@ -306,7 +301,6 @@ local function PlayHitSound()
     Sound:Destroy()
 end
 
--- ================= Skybox Update Function =================
 local function UpdateSkybox()
     for _, obj in ipairs(Lighting:GetChildren()) do
         if obj:IsA("Sky") and (obj.Name == "hooksenseSky" or obj.Name == "Sky") then
@@ -334,7 +328,6 @@ local function UpdateSkybox()
     end
 end
 
--- ================= Create Target HUD GUI =================
 local TargetGui = Instance.new("ScreenGui")
 TargetGui.Name = "hooksenseTargetHudGui"
 TargetGui.ResetOnSpawn = false
@@ -457,14 +450,34 @@ local MainBarCorner = Instance.new("UICorner")
 MainBarCorner.CornerRadius = UDim.new(0, 3)
 MainBarCorner.Parent = HealthBar
 
--- ================= ScreenGui Container for Modern Fat-Font ESP =================
 local EspGui = Instance.new("ScreenGui")
 EspGui.Name = "hooksenseModernEspGui"
 EspGui.ResetOnSpawn = false
 EspGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 EspGui.Parent = CoreGui:FindFirstChild("RobloxGui") or CoreGui
 
--- ================= Drawing Objects Setup =================
+local DeltaGradientGui = Instance.new("ScreenGui")
+DeltaGradientGui.Name = "hooksense_DeltaGradientGui"
+DeltaGradientGui.ResetOnSpawn = false
+DeltaGradientGui.IgnoreGuiInset = true
+DeltaGradientGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+DeltaGradientGui.Parent = CoreGui:FindFirstChild("RobloxGui") or CoreGui
+
+local FOVFillFrame = Instance.new("Frame")
+FOVFillFrame.Name = "FOVGradientFrame"
+FOVFillFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+FOVFillFrame.BorderSizePixel = 0
+FOVFillFrame.BackgroundTransparency = 1
+FOVFillFrame.Visible = false
+FOVFillFrame.Parent = DeltaGradientGui
+
+local FOVFillCorner = Instance.new("UICorner")
+FOVFillCorner.CornerRadius = UDim.new(1, 0)
+FOVFillCorner.Parent = FOVFillFrame
+
+local FOVFillGradient = Instance.new("UIGradient")
+FOVFillGradient.Parent = FOVFillFrame
+
 local FOVCircleOutline = Drawing.new("Circle")
 FOVCircleOutline.Thickness = 1.5
 FOVCircleOutline.NumSides = 40
@@ -476,11 +489,6 @@ FOVCircle.Thickness = 1.0
 FOVCircle.NumSides = 40
 FOVCircle.Filled = false
 FOVCircle.Visible = _G.FOVVisible
-
-local FOVFill = Drawing.new("Circle")
-FOVFill.NumSides = 40
-FOVFill.Filled = true
-FOVFill.Visible = false
 
 local TracerLineOutline = Drawing.new("Line")
 TracerLineOutline.Transparency = 1.0
@@ -505,7 +513,6 @@ local function isDead(humanoid, char)
     return false
 end
 
--- ================= Target Selector System (With Perm Lock-On) =================
 local CurrentAimTargetPosition = nil
 local CurrentTargetPlayer = nil
 local CurrentTargetCharacter = nil
@@ -615,7 +622,6 @@ task.spawn(function()
     end
 end)
 
--- ================= Health Monitor =================
 local CurrentConnectedHumanoid = nil
 local HealthConnection = nil
 local function BindHealthTracker(targetPlayer)
@@ -642,7 +648,6 @@ local function BindHealthTracker(targetPlayer)
     end)
 end
 
--- ================= HEAD-LOCK BILLBOARD ESP ENGINE =================
 local function CreateESP(player)
     local Billboard = Instance.new("BillboardGui")
     Billboard.Name = player.Name .. "_BillboardESP"
@@ -700,16 +705,15 @@ Players.PlayerRemoving:Connect(function(player)
     RemoveESP(player)
 end)
 
--- ================= Main Render Loop =================
 local RunService = game:GetService("RunService")
 local spinAngle = 0
 local jitterToggle = false
 local LastLoggedHudTargetId = 0
-local colorRotateTick = 0
 
 RunService.RenderStepped:Connect(function()
     local Center = getScreenCenter()
     local ShowCircle = _G.FOVVisible and (_G.SilentAimEnabled or _G.MobileAimbotEnabled)
+    
     FOVCircleOutline.Position = Center
     FOVCircleOutline.Radius = _G.FOVSize
     FOVCircleOutline.Visible = ShowCircle
@@ -721,25 +725,24 @@ RunService.RenderStepped:Connect(function()
     FOVCircle.Color = _G.FOVCircleColor
 
     if ShowCircle and _G.FOVFillEnabled then
-        FOVFill.Position = Center
-        FOVFill.Radius = _G.FOVSize
-        FOVFill.Transparency = _G.FOVFillTransparency
-        FOVFill.Visible = true
+        FOVFillFrame.Position = UDim2.new(0, Center.X, 0, Center.Y)
+        FOVFillFrame.Size = UDim2.new(0, _G.FOVSize * 2, 0, _G.FOVSize * 2)
+        
+        FOVFillGradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, _G.FOVFillColor1),
+            ColorSequenceKeypoint.new(0.5, _G.FOVFillColor2),
+            ColorSequenceKeypoint.new(1, _G.FOVFillColor3)
+        })
+        
+        FOVFillFrame.BackgroundTransparency = _G.FOVFillTransparency
+        
         if _G.FOVFillRotateEnabled then
-            colorRotateTick = colorRotateTick + (0.01 * _G.FOVFillRotateSpeed)
-            local t = (math.sin(colorRotateTick) + 1) / 2
-            local currentFillColor
-            if t < 0.5 then
-                currentFillColor = _G.FOVFillColor1:Lerp(_G.FOVFillColor2, t * 2)
-            else
-                currentFillColor = _G.FOVFillColor2:Lerp(_G.FOVFillColor3, (t - 0.5) * 2)
-            end
-            FOVFill.Color = currentFillColor
-        else
-            FOVFill.Color = _G.FOVFillColor1
+            currentRotationAngle = (currentRotationAngle + (0.5 * _G.FOVFillRotateSpeed)) % 360
         end
+        FOVFillGradient.Rotation = currentRotationAngle
+        FOVFillFrame.Visible = true
     else
-        FOVFill.Visible = false
+        FOVFillFrame.Visible = false
     end
 
     if (_G.SilentAimEnabled or _G.MobileAimbotEnabled) and _G.TracerEnabled and CurrentAimTargetPosition then
@@ -918,7 +921,6 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ================= Auto Bunny Hop =================
 task.spawn(function()
     while true do
         task.wait()
@@ -938,7 +940,6 @@ task.spawn(function()
     end
 end)
 
--- ================= Anti-Detection Enhanced Namecall Hook =================
 local OldNamecall
 OldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(Self, ...)
     if checkcaller() then return OldNamecall(Self, ...) end
@@ -978,7 +979,6 @@ OldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(Self, ...)
     return OldNamecall(Self, ...)
 end))
 
--- ================= Tabs Setup (New Sized UI Structure) =================
 local Tabs = {
     Main = Window:AddTab("Main"),
     Aimbot = Window:AddTab("Aimbot"),
@@ -990,11 +990,9 @@ local Tabs = {
     ['UI'] = Window:AddTab("UI")
 }
 
--- เรียกดึงตาราง Options / Toggles จาก Global ของ LinoriaLib ตรงๆ หลังสร้าง Tab เสร็จ
 local Options = getgenv().Options
 local Toggles = getgenv().Toggles
 
--- === TAB 0: MOBILE AIMBOT CONFIGURATION ===
 local MobileAimbotBox = Tabs.Aimbot:AddLeftGroupbox("Aimbot")
 local MobileAimbotSettings = Tabs.Aimbot:AddRightGroupbox("Aimbot Options")
 
@@ -1040,12 +1038,11 @@ Options.MobileTargetPartDropdown:OnChanged(function()
     _G.AimbotTargetPart = Options.MobileTargetPartDropdown.Value
 end)
 
--- === TAB 1: SILENT AIM CONFIGURATION ===
 local LeftGroupBox = Tabs.Main:AddLeftGroupbox("Silent Aim")
 local PermLockGroupBox = Tabs.Main:AddLeftGroupbox("Permanent Lock Settings")
 local TargetGroupBox = Tabs.Main:AddLeftGroupbox("Targeting Options")
 local FOVGroupBox = Tabs.Main:AddRightGroupbox("FOV Settings")
-local FOVFillGroupBox = Tabs.Main:AddRightGroupbox("FOV Dynamic Fill")
+local FOVFillGroupBox = Tabs.Main:AddRightGroupbox("FOV Dynamic Gradient Fill")
 local TracerGroupBox = Tabs.Main:AddRightGroupbox("Tracer Line Settings")
 
 LeftGroupBox:AddToggle("SilentAimToggle", { Text = "Enable Silent Aim", Default = false })
@@ -1200,27 +1197,27 @@ Options.FOVFillTransparencySlider:OnChanged(function()
     _G.FOVFillTransparency = Options.FOVFillTransparencySlider.Value
 end)
 
-FOVFillGroupBox:AddLabel("Fill Color 1"):AddColorPicker("FOVFillColor1Picker", { Default = Color3.fromRGB(255, 0, 0) })
+FOVFillGroupBox:AddLabel("Fill Color 1 (บน / Top)"):AddColorPicker("FOVFillColor1Picker", { Default = Color3.fromRGB(255, 0, 0) })
 Options.FOVFillColor1Picker:OnChanged(function()
     _G.FOVFillColor1 = Options.FOVFillColor1Picker.Value
 end)
 
-FOVFillGroupBox:AddLabel("Fill Color 2"):AddColorPicker("FOVFillColor2Picker", { Default = Color3.fromRGB(0, 255, 0) })
+FOVFillGroupBox:AddLabel("Fill Color 2 (กลาง / Mid)"):AddColorPicker("FOVFillColor2Picker", { Default = Color3.fromRGB(0, 255, 0) })
 Options.FOVFillColor2Picker:OnChanged(function()
     _G.FOVFillColor2 = Options.FOVFillColor2Picker.Value
 end)
 
-FOVFillGroupBox:AddLabel("Fill Color 3"):AddColorPicker("FOVFillColor3Picker", { Default = Color3.fromRGB(0, 0, 255) })
+FOVFillGroupBox:AddLabel("Fill Color 3 (ล่าง / Bottom)"):AddColorPicker("FOVFillColor3Picker", { Default = Color3.fromRGB(0, 0, 255) })
 Options.FOVFillColor3Picker:OnChanged(function()
     _G.FOVFillColor3 = Options.FOVFillColor3Picker.Value
 end)
 
-FOVFillGroupBox:AddToggle("FOVFillRotateToggle", { Text = "Rotate FOV Fill", Default = false })
+FOVFillGroupBox:AddToggle("FOVFillRotateToggle", { Text = "Rotate FOV Gradient", Default = false })
 Toggles.FOVFillRotateToggle:OnChanged(function()
     _G.FOVFillRotateEnabled = Toggles.FOVFillRotateToggle.Value
 end)
 
-FOVFillGroupBox:AddSlider("FOVFillRotateSpeedSlider", { Text = "Color Rotation Speed", Default = 1, Min = 1, Max = 10, Rounding = 1 })
+FOVFillGroupBox:AddSlider("FOVFillRotateSpeedSlider", { Text = "Gradient Rotation Speed", Default = 1, Min = 1, Max = 10, Rounding = 1 })
 Options.FOVFillRotateSpeedSlider:OnChanged(function()
     _G.FOVFillRotateSpeed = Options.FOVFillRotateSpeedSlider.Value
 end)
@@ -1250,7 +1247,6 @@ Options.TracerLineOutlineColorPicker:OnChanged(function()
     _G.TracerLineOutlineColor = Options.TracerLineOutlineColorPicker.Value
 end)
 
--- === TAB 2: HIT EFFECTS ===
 local SoundLeftBox = Tabs.HitEffects:AddLeftGroupbox("Hit Sound")
 local NotifyRightBox = Tabs.HitEffects:AddRightGroupbox("Hit Notification")
 
@@ -1310,7 +1306,6 @@ Options.HitNotifyColorPicker:OnChanged(function()
     end
 end)
 
--- === TAB 3: VISUALS ===
 local EspLeftBox = Tabs.ESP:AddLeftGroupbox("Master Visuals Control")
 local EspRightBox = Tabs.ESP:AddRightGroupbox("Visual Color Customization")
 
@@ -1346,7 +1341,6 @@ Options.NameColorPicker:OnChanged(function()
     _G.ColorName = Options.NameColorPicker.Value
 end)
 
--- === TAB 4: MOVEMENT & ANTI AIM ===
 local MoveLeftBox = Tabs.Movement:AddLeftGroupbox("Anti Aim")
 local MoveRightBox = Tabs.Movement:AddRightGroupbox("Movement & Camera")
 
@@ -1396,7 +1390,6 @@ Options.BhopMultiplierSlider:OnChanged(function()
     _G.BhopSpeedMultiplier = Options.BhopMultiplierSlider.Value
 end)
 
--- === TAB 5: WORLD ENVIRONMENT ===
 local LightingColorsGroup = Tabs.World:AddLeftGroupbox("Lighting Colors & Time")
 local WorldSkyboxBox = Tabs.World:AddLeftGroupbox("Custom Skybox System")
 local WorldFogBox = Tabs.World:AddLeftGroupbox("Fog Customization")
@@ -1527,7 +1520,6 @@ Options.WeatherDropdown:OnChanged(function()
     end
 end)
 
--- ================= [FIXED] Loaders Scripts Addon Configuration =================
 local AddonGroupBox = Tabs.Addons:AddLeftGroupbox("loaders Scripts")
 AddonGroupBox:AddButton({ Text = "load walkspeed", Func = function()
     local success, err = pcall(function()
@@ -1540,7 +1532,6 @@ AddonGroupBox:AddButton({ Text = "load walkspeed", Func = function()
     end
 end })
 
--- === TAB 7: UI SETTINGS & CONFIGS ===
 local InterfaceGroup = Tabs['UI']:AddLeftGroupbox("Global Font Customization")
 local MenuGroup = Tabs['UI']:AddLeftGroupbox("Menu Settings")
 local AppearanceGroup = Tabs['UI']:AddRightGroupbox("UI Appearance Customization")
