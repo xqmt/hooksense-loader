@@ -113,7 +113,11 @@ _G.SkyboxEnabled = false
 _G.SelectedSkybox = "Minecraft"
 local SkyboxIDs = {
     ["Minecraft"] = "rbxassetid://83591302868034",
-    ["Minecraft 2"] = "rbxassetid://117301665698887"
+    ["Minecraft 2"] = "rbxassetid://117301665698887",
+    ["Skyblox 1"] = "rbxassetid://4951222008",
+    ["Skyblox 2"] = "rbxassetid://4604073339",
+    ["Skyblox 3"] = "rbxassetid://8464073887",
+    ["Skyblox 4"] = "rbxassetid://90988519"
 }
 
 _G.FOVCircleColor = Color3.fromRGB(255, 255, 255)
@@ -1428,7 +1432,7 @@ Toggles.SkyboxToggle:OnChanged(function()
     UpdateSkybox()
 end)
 
-WorldSkyboxBox:AddDropdown("SkyboxDropdown", { Text = "Select Skybox Type", Values = {"Minecraft", "Minecraft 2"}, Default = 1, Multi = false })
+WorldSkyboxBox:AddDropdown("SkyboxDropdown", { Text = "Select Skybox Type", Values = {"Minecraft", "Minecraft 2", "Skyblox 1", "Skyblox 2", "Skyblox 3", "Skyblox 4"}, Default = 1, Multi = false })
 Options.SkyboxDropdown:OnChanged(function()
     _G.SelectedSkybox = Options.SkyboxDropdown.Value
     UpdateSkybox()
