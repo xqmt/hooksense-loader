@@ -94,6 +94,8 @@ local SoundIDs = {
     ["Rust"] = "rbxassetid://138750331387064",
     ["Fatality"] = "rbxassetid://111508823459652",
     ["Fatality 2"] = "rbxassetid://17802817724",
+    ["Minecraft xp"] = "rbxassetid://17148249625",
+    ["Minecraft"] = "rbxassetid://135478009117226",
     ["Skeet"] = "rbxassetid://80461265049096"
 }
 
@@ -1250,7 +1252,7 @@ end)
 local SoundLeftBox = Tabs.HitEffects:AddLeftGroupbox("Hit Sound")
 local NotifyRightBox = Tabs.HitEffects:AddRightGroupbox("Hit Notification")
 
-SoundLeftBox:AddDropdown("HitSoundDropdown", { Text = "Target Hit Sound", Values = {"None", "Spark", "Neverlose", "Rust", "Fatality", "Fatality 2", "Skeet"}, Default = 1, Multi = false })
+SoundLeftBox:AddDropdown("HitSoundDropdown", { Text = "Target Hit Sound", Values = {"None", "Spark", "Neverlose", "Rust", "Fatality", "Fatality 2", "Minecraft xp", "Minecraft", "Skeet"}, Default = 1, Multi = false })
 Options.HitSoundDropdown:OnChanged(function()
     _G.HitSoundMode = Options.HitSoundDropdown.Value
 end)
