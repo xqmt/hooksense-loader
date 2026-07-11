@@ -1203,17 +1203,17 @@ Options.FOVFillTransparencySlider:OnChanged(function()
     _G.FOVFillTransparency = Options.FOVFillTransparencySlider.Value
 end)
 
-FOVFillGroupBox:AddLabel("Fill Color 1 (บน / Top)"):AddColorPicker("FOVFillColor1Picker", { Default = Color3.fromRGB(255, 0, 0) })
+FOVFillGroupBox:AddLabel("Fill Color 1 (Top)"):AddColorPicker("FOVFillColor1Picker", { Default = Color3.fromRGB(255, 0, 0) })
 Options.FOVFillColor1Picker:OnChanged(function()
     _G.FOVFillColor1 = Options.FOVFillColor1Picker.Value
 end)
 
-FOVFillGroupBox:AddLabel("Fill Color 2 (กลาง / Mid)"):AddColorPicker("FOVFillColor2Picker", { Default = Color3.fromRGB(0, 255, 0) })
+FOVFillGroupBox:AddLabel("Fill Color 2 (Mid)"):AddColorPicker("FOVFillColor2Picker", { Default = Color3.fromRGB(0, 255, 0) })
 Options.FOVFillColor2Picker:OnChanged(function()
     _G.FOVFillColor2 = Options.FOVFillColor2Picker.Value
 end)
 
-FOVFillGroupBox:AddLabel("Fill Color 3 (ล่าง / Bottom)"):AddColorPicker("FOVFillColor3Picker", { Default = Color3.fromRGB(0, 0, 255) })
+FOVFillGroupBox:AddLabel("Fill Color 3 (Bottom)"):AddColorPicker("FOVFillColor3Picker", { Default = Color3.fromRGB(0, 0, 255) })
 Options.FOVFillColor3Picker:OnChanged(function()
     _G.FOVFillColor3 = Options.FOVFillColor3Picker.Value
 end)
@@ -1537,6 +1537,19 @@ AddonGroupBox:AddButton({ Text = "load walkspeed", Func = function()
         Library:Notify("Error loading script: " .. tostring(err))
     end
 end })
+
+local AddonGroupBox = Tabs.Addons:AddLeftGroupbox("loaders Scripts")
+AddonGroupBox:AddButton({ Text = "load drawing esp", Func = function()
+    local success, err = pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/xqmt/Drawing-Esp-/refs/heads/main/99"))()
+    end)
+    if success then
+        Library:Notify("Mooze Mobile Rework loaded successfully!")
+    else
+        Library:Notify("Error loading script: " .. tostring(err))
+    end
+end })
+
 
 local InterfaceGroup = Tabs['UI']:AddLeftGroupbox("Global Font Customization")
 local MenuGroup = Tabs['UI']:AddLeftGroupbox("Menu Settings")
