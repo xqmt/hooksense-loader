@@ -109,6 +109,10 @@ _G.HitNotifyDuration = 2.5
 _G.HitNotifyColor = Color3.fromRGB(0, 255, 255)
 local ActiveNotifications = {}
 
+-- Hit Overlay Variables
+_G.HitOverlayEnabled = false
+_G.HitOverlayColor = Color3.fromRGB(255, 0, 0)
+
 _G.SkyboxEnabled = false
 _G.SelectedSkybox = "Minecraft"
 local SkyboxIDs = {
@@ -168,11 +172,45 @@ local CurrentWeatherEffect = nil
 local DisplayNameLabel, UsernameLabel, UserIdLabel
 local ESP_Storage = {}
 
+-- ค้นหา PlayerGui เพื่อความชัวร์บน Delta Emulator
+local TargetGuiParent = LocalPlayer:WaitForChild("PlayerGui", 5) or (CoreGui:FindFirstChild("RobloxGui") or CoreGui)
+
 local HitNotifyGui = Instance.new("ScreenGui")
 HitNotifyGui.Name = "hooksense_HitNotifyGui"
 HitNotifyGui.ResetOnSpawn = false
 HitNotifyGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-HitNotifyGui.Parent = CoreGui:FindFirstChild("RobloxGui") or CoreGui
+HitNotifyGui.Parent = TargetGuiParent
+
+-- แก้ไข Hit Overlay GUI ให้ใช้ Frame แทน ImageLabel เพื่อรันบนโมบายชัวร์ 100%
+local HitOverlayGui = Instance.new("ScreenGui")
+HitOverlayGui.Name = "hooksense_HitOverlayGui"
+HitOverlayGui.ResetOnSpawn = false
+HitOverlayGui.IgnoreGuiInset = true
+HitOverlayGui.DisplayOrder = 99999
+HitOverlayGui.Parent = TargetGuiParent
+
+local OverlayFrame = Instance.new("Frame")
+OverlayFrame.Name = "HitOverlay"
+OverlayFrame.Size = UDim2.new(1, 0, 1, 0)
+OverlayFrame.BorderSizePixel = 0
+OverlayFrame.BackgroundColor3 = _G.HitOverlayColor
+OverlayFrame.BackgroundTransparency = 1
+OverlayFrame.ZIndex = 99999
+OverlayFrame.Parent = HitOverlayGui
+
+local function TriggerHitOverlay()
+    if not _G.HitOverlayEnabled then return end
+    OverlayFrame.BackgroundColor3 = _G.HitOverlayColor
+    
+    local fadeIn = TweenService:Create(OverlayFrame, TweenInfo.new(0.05, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0.5})
+    local fadeOut = TweenService:Create(OverlayFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1})
+    
+    fadeIn:Play()
+    fadeIn.Completed:Connect(function()
+        task.wait(0.01)
+        fadeOut:Play()
+    end)
+end
 
 local function UpdateNotificationPositions()
     local spacing = 35
@@ -338,14 +376,14 @@ local TargetGui = Instance.new("ScreenGui")
 TargetGui.Name = "hooksenseTargetHudGui"
 TargetGui.ResetOnSpawn = false
 TargetGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-TargetGui.Parent = CoreGui:FindFirstChild("RobloxGui") or CoreGui
+TargetGui.Parent = TargetGuiParent
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 260, 0, 85)
 MainFrame.Position = UDim2.new(0, 20, 0, 60)
-MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 12)
-MainFrame.BackgroundTransparency = 0.4
+MainFrame.BackgroundColor3 = Color3.fromRGB(5, 5, 6) -- แก้ไข: เปลี่ยนเป็นสีดำเข้มสนิทตามต้องการ
+MainFrame.BackgroundTransparency = 0.05 -- แก้ไข: ปรับให้เข้มทึบเห็นชัดเจนสไตล์โมเดิร์น
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Visible = false
@@ -356,8 +394,8 @@ Corner.CornerRadius = UDim.new(0, 8)
 Corner.Parent = MainFrame
 
 local Stroke = Instance.new("UIStroke")
-Stroke.Color = Color3.fromRGB(0, 0, 0)
-Stroke.Thickness = 2.0
+Stroke.Color = Color3.fromRGB(35, 35, 40) -- แก้ไข: ปรับเส้นขอบให้ดูนวลกลืนกับพื้นหลังดำเข้ม
+Stroke.Thickness = 1.5
 Stroke.Parent = MainFrame
 
 local dragging, dragInput, dragStart, startPos
@@ -440,7 +478,7 @@ UserIdLabel.Parent = InfoFrame
 local HealthBackground = Instance.new("Frame")
 HealthBackground.Size = UDim2.new(1, -24, 0, 6)
 HealthBackground.Position = UDim2.new(0, 12, 1, -16)
-HealthBackground.BackgroundColor3 = Color3.fromRGB(45, 15, 15)
+HealthBackground.BackgroundColor3 = Color3.fromRGB(30, 15, 15) -- แก้ไข: ปรับสีพื้นหลอดเลือดให้เข้ากับธีมมืด
 HealthBackground.Parent = MainFrame
 
 local HealthBarCorner = Instance.new("UICorner")
@@ -460,14 +498,14 @@ local EspGui = Instance.new("ScreenGui")
 EspGui.Name = "hooksenseModernEspGui"
 EspGui.ResetOnSpawn = false
 EspGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-EspGui.Parent = CoreGui:FindFirstChild("RobloxGui") or CoreGui
+EspGui.Parent = TargetGuiParent
 
 local DeltaGradientGui = Instance.new("ScreenGui")
 DeltaGradientGui.Name = "hooksense_DeltaGradientGui"
 DeltaGradientGui.ResetOnSpawn = false
 DeltaGradientGui.IgnoreGuiInset = true
 DeltaGradientGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-DeltaGradientGui.Parent = CoreGui:FindFirstChild("RobloxGui") or CoreGui
+DeltaGradientGui.Parent = TargetGuiParent
 
 local FOVFillFrame = Instance.new("Frame")
 FOVFillFrame.Name = "FOVGradientFrame"
@@ -642,6 +680,7 @@ local function BindHealthTracker(targetPlayer)
         if hum.Health < lastHealth then
             local damageCalculated = math.floor(lastHealth - hum.Health)
             task.spawn(PlayHitSound)
+            task.spawn(TriggerHitOverlay) 
             local hitPartName = _G.TargetPartMode
             if hitPartName == "Root to Head" then
                 hitPartName = "Body/Head"
@@ -715,6 +754,7 @@ local RunService = game:GetService("RunService")
 local spinAngle = 0
 local jitterToggle = false
 local LastLoggedHudTargetId = 0
+local currentHudHealthLerp = 0 -- เพิ่มตัวแปรสำหรับจำค่า Lerp ล่าสุดของหลอดเลือด
 
 RunService.RenderStepped:Connect(function()
     local Center = getScreenCenter()
@@ -786,13 +826,22 @@ RunService.RenderStepped:Connect(function()
             DisplayNameLabel.Text = CurrentTargetPlayer.DisplayName
             UsernameLabel.Text = "@" .. CurrentTargetPlayer.Name
             UserIdLabel.Text = "ID: " .. tostring(CurrentTargetPlayer.UserId)
+            
             local pct = math.clamp(Hum.Health / Hum.MaxHealth, 0, 1)
-            HealthBar.Size = UDim2.new(pct, 0, 1, 0)
-            HealthBar.BackgroundColor3 = Color3.fromHSV(pct * 0.33, 1, 1)
+            
+            -- แก้ไข: เพิ่มระบบสลับเป้าหมายแบบทันที ไม่ให้หลอดเลือดอนิเมชันลากค้างมาจากเป้าหมายเก่า
             if CurrentTargetPlayer.UserId ~= LastLoggedHudTargetId then
+                currentHudHealthLerp = pct
                 LastLoggedHudTargetId = CurrentTargetPlayer.UserId
                 AvatarImage.Image = "rbxthumb://type=AvatarHeadShot&id=" .. tostring(CurrentTargetPlayer.UserId) .. "&w=48&h=48"
             end
+            
+            -- แก้ไข: คำนวณ Health Bar Lerp 0.10x แบบสมูท
+            currentHudHealthLerp = currentHudHealthLerp + (pct - currentHudHealthLerp) * 0.10
+            
+            HealthBar.Size = UDim2.new(currentHudHealthLerp, 0, 1, 0)
+            HealthBar.BackgroundColor3 = Color3.fromHSV(currentHudHealthLerp * 0.33, 1, 1)
+            
             BindHealthTracker(CurrentTargetPlayer)
             MainFrame.Visible = true
         else
@@ -1254,6 +1303,7 @@ Options.TracerLineOutlineColorPicker:OnChanged(function()
 end)
 
 local SoundLeftBox = Tabs.HitEffects:AddLeftGroupbox("Hit Sound")
+local OverlayLeftBox = Tabs.HitEffects:AddLeftGroupbox("Hit Overlay") 
 local NotifyRightBox = Tabs.HitEffects:AddRightGroupbox("Hit Notification")
 
 SoundLeftBox:AddDropdown("HitSoundDropdown", { Text = "Target Hit Sound", Values = {"None", "Spark", "Neverlose", "Rust", "Fatality", "Fatality 2", "Minecraft xp", "Minecraft", "Skeet"}, Default = 1, Multi = false })
@@ -1264,6 +1314,16 @@ end)
 SoundLeftBox:AddSlider("HitSoundVolumeSlider", { Text = "Hit Sound Volume Level", Default = 2.0, Min = 0.0, Max = 5.0, Rounding = 1 })
 Options.HitSoundVolumeSlider:OnChanged(function()
     _G.HitSoundVolume = Options.HitSoundVolumeSlider.Value
+end)
+
+OverlayLeftBox:AddToggle("HitOverlayToggle", { Text = "Enable Hit Overlay", Default = false })
+Toggles.HitOverlayToggle:OnChanged(function()
+    _G.HitOverlayEnabled = Toggles.HitOverlayToggle.Value
+end)
+
+OverlayLeftBox:AddLabel("Overlay Border Color"):AddColorPicker("HitOverlayColorPicker", { Default = Color3.fromRGB(255, 0, 0) })
+Options.HitOverlayColorPicker:OnChanged(function()
+    _G.HitOverlayColor = Options.HitOverlayColorPicker.Value
 end)
 
 NotifyRightBox:AddToggle("HitNotifyToggle", { Text = "Enable Hit Notification (With Checkmark ✓)", Default = true })
@@ -1538,7 +1598,6 @@ AddonGroupBox:AddButton({ Text = "load walkspeed", Func = function()
     end
 end })
 
-local AddonGroupBox = Tabs.Addons:AddLeftGroupbox("loaders Scripts")
 AddonGroupBox:AddButton({ Text = "load drawing esp", Func = function()
     local success, err = pcall(function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/xqmt/Drawing-Esp-/refs/heads/main/99"))()
