@@ -1039,10 +1039,10 @@ local Tabs = {
     Aimbot = Window:AddTab("Aimbot"),
     HitEffects = Window:AddTab("Hits"),
     ESP = Window:AddTab("Esp"),
-    Movement = Window:AddTab("Move Anti-aim"),
+    Movement = Window:AddTab("Character"),
     World = Window:AddTab("World"),
     Addons = Window:AddTab("Addons"),
-    ['UI'] = Window:AddTab("UI")
+    ['UI'] = Window:AddTab("Setting")
 }
 
 local Options = getgenv().Options
