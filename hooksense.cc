@@ -1592,7 +1592,7 @@ AddonGroupBox:AddButton({ Text = "load walkspeed", Func = function()
         loadstring(game:HttpGet('https://raw.githubusercontent.com/19mdSkibidi/19sMooze-Mobile-Rework/refs/heads/main/Mooze%20Mob'))()
     end)
     if success then
-        Library:Notify("Mooze Mobile Rework loaded successfully!")
+        Library:Notify("successfully!")
     else
         Library:Notify("Error loading script: " .. tostring(err))
     end
@@ -1603,7 +1603,7 @@ AddonGroupBox:AddButton({ Text = "load drawing esp", Func = function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/xqmt/Drawing-Esp-/refs/heads/main/99"))()
     end)
     if success then
-        Library:Notify("Mooze Mobile Rework loaded successfully!")
+        Library:Notify("successfully!")
     else
         Library:Notify("Error loading script: " .. tostring(err))
     end
