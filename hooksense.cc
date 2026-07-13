@@ -12,6 +12,7 @@ local Window = Library:CreateWindow({
     Center = true,
     AutoShow = true,
     Resizable = true,
+    ShowCustomCursor = true,
     UnlockMouseWhileOpen = true,
     NotifySide = "Left",
     TabPadding = 8,
@@ -168,7 +169,7 @@ local SoundService = game:GetService("SoundService")
 local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
 local CurrentWeatherEffect = nil
-local DisplayNameLabel, UsernameLabel, UserIdLabel
+local DisplayNameLabel, UsernameLabel, UserIdLabel, AvatarImage
 local ESP_Storage = {}
 
 local TargetGuiParent = LocalPlayer:WaitForChild("PlayerGui", 5) or (CoreGui:FindFirstChild("RobloxGui") or CoreGui)
@@ -369,76 +370,117 @@ local function UpdateSkybox()
     end
 end
 
+-- =============================================================================
+-- [UPGRADED ULTRA CYBERPUNK TARGET HUD SYSTEM - GREEN & BLACK THEME]
+-- =============================================================================
 local TargetGui = Instance.new("ScreenGui")
 TargetGui.Name = "hooksenseTargetHudGui"
 TargetGui.ResetOnSpawn = false
 TargetGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 TargetGui.Parent = TargetGuiParent
 
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 260, 0, 85)
-MainFrame.Position = UDim2.new(0, 20, 0, 60)
-MainFrame.BackgroundColor3 = Color3.fromRGB(5, 5, 6) 
-MainFrame.BackgroundTransparency = 0.05 
-MainFrame.BorderSizePixel = 0
-MainFrame.Active = true
-MainFrame.Visible = false
-MainFrame.Parent = TargetGui
+local MainCanvas = Instance.new("CanvasGroup")
+MainCanvas.Name = "MainTargetHUD"
+MainCanvas.Size = UDim2.new(0, 280, 0, 90)
+MainCanvas.AnchorPoint = Vector2.new(1, 0)
+MainCanvas.Position = UDim2.new(1, -20, 0, 60)
+MainCanvas.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+MainCanvas.BackgroundTransparency = 0.15 
+MainCanvas.BorderSizePixel = 0
+MainCanvas.GroupTransparency = 1 
+MainCanvas.Visible = false
+MainCanvas.Parent = TargetGui
 
 local Corner = Instance.new("UICorner")
-Corner.CornerRadius = UDim.new(0, 8)
-Corner.Parent = MainFrame
+Corner.CornerRadius = UDim.new(0, 10)
+Corner.Parent = MainCanvas
 
 local Stroke = Instance.new("UIStroke")
-Stroke.Color = Color3.fromRGB(35, 35, 40) 
-Stroke.Thickness = 1.5
-Stroke.Parent = MainFrame
+Stroke.Color = Color3.fromRGB(255, 255, 255)
+Stroke.Thickness = 1.8
+Stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+Stroke.Parent = MainCanvas
 
-local dragging, dragInput, dragStart, startPos
+local BorderGradient = Instance.new("UIGradient")
+BorderGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 100)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 150, 0)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 255, 100))
+})
+BorderGradient.Rotation = 45
+BorderGradient.Parent = Stroke
+
+local dragging = false
+local dragInput
+local dragStart
+local startPos
+
 local function update(input)
     local delta = input.Position - dragStart
-    MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    TweenService:Create(MainCanvas, TweenInfo.new(0.08, Enum.EasingStyle.OutQuad), {
+        Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    }):Play()
 end
-MainFrame.InputBegan:Connect(function(input)
+
+MainCanvas.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
-        startPos = MainFrame.Position
-        input.Changed:Connect(function()
+        startPos = MainCanvas.Position
+        
+        local connection
+        connection = input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
                 dragging = false
+                if connection then connection:Disconnect() end
             end
         end)
     end
 end)
-MainFrame.InputChanged:Connect(function(input)
+
+MainCanvas.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
         dragInput = input
     end
 end)
+
 UserInputService.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
+    if dragging and (input == dragInput or input.UserInputType == Enum.UserInputType.Touch) then
         update(input)
     end
 end)
 
-local AvatarImage = Instance.new("ImageLabel")
-AvatarImage.Size = UDim2.new(0, 52, 0, 52)
-AvatarImage.Position = UDim2.new(0, 12, 0, 16)
-AvatarImage.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-AvatarImage.BorderSizePixel = 0
-AvatarImage.Parent = MainFrame
+local AvatarFrame = Instance.new("Frame")
+AvatarFrame.Size = UDim2.new(0, 56, 0, 56)
+AvatarFrame.Position = UDim2.new(0, 14, 0, 14)
+AvatarFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
+AvatarFrame.BorderSizePixel = 0
+AvatarFrame.Parent = MainCanvas
+
+local AvatarCorner = Instance.new("UICorner")
+AvatarCorner.CornerRadius = UDim.new(1, 0) 
+AvatarCorner.Parent = AvatarFrame
+
+local AvatarStroke = Instance.new("UIStroke")
+AvatarStroke.Color = Color3.fromRGB(0, 0, 0)
+AvatarStroke.Thickness = 1.5
+AvatarStroke.Parent = AvatarFrame
+
+AvatarImage = Instance.new("ImageLabel")
+AvatarImage.Size = UDim2.new(1, -4, 1, -4)
+AvatarImage.Position = UDim2.new(0, 2, 0, 2)
+AvatarImage.BackgroundTransparency = 1
+AvatarImage.Parent = AvatarFrame
 
 local ImgCorner = Instance.new("UICorner")
 ImgCorner.CornerRadius = UDim.new(1, 0)
 ImgCorner.Parent = AvatarImage
 
 local InfoFrame = Instance.new("Frame")
-InfoFrame.Size = UDim2.new(1, -85, 1, -30)
-InfoFrame.Position = UDim2.new(0, 75, 0, 12)
+InfoFrame.Size = UDim2.new(1, -95, 1, -40)
+InfoFrame.Position = UDim2.new(0, 84, 0, 12)
 InfoFrame.BackgroundTransparency = 1
-InfoFrame.Parent = MainFrame
+InfoFrame.Parent = MainCanvas
 
 DisplayNameLabel = Instance.new("TextLabel")
 DisplayNameLabel.Size = UDim2.new(1, 0, 0, 18)
@@ -446,7 +488,7 @@ DisplayNameLabel.Font = _G.GlobalFontSetting
 DisplayNameLabel.TextSize = 14
 DisplayNameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 DisplayNameLabel.TextXAlignment = Enum.TextXAlignment.Left
-DisplayNameLabel.Text = "Display Name"
+DisplayNameLabel.Text = "No Target"
 DisplayNameLabel.BackgroundTransparency = 1
 DisplayNameLabel.Parent = InfoFrame
 
@@ -455,9 +497,9 @@ UsernameLabel.Size = UDim2.new(1, 0, 0, 14)
 UsernameLabel.Position = UDim2.new(0, 0, 0, 18)
 UsernameLabel.Font = _G.GlobalFontSetting
 UsernameLabel.TextSize = 11
-UsernameLabel.TextColor3 = Color3.fromRGB(170, 170, 180)
+UsernameLabel.TextColor3 = Color3.fromRGB(140, 140, 155)
 UsernameLabel.TextXAlignment = Enum.TextXAlignment.Left
-UsernameLabel.Text = "@Username"
+UsernameLabel.Text = "@none"
 UsernameLabel.BackgroundTransparency = 1
 UsernameLabel.Parent = InfoFrame
 
@@ -466,30 +508,53 @@ UserIdLabel.Size = UDim2.new(1, 0, 0, 12)
 UserIdLabel.Position = UDim2.new(0, 0, 0, 32)
 UserIdLabel.Font = _G.GlobalFontSetting
 UserIdLabel.TextSize = 10
-UserIdLabel.TextColor3 = Color3.fromRGB(0, 255, 255)
+UserIdLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
 UserIdLabel.TextXAlignment = Enum.TextXAlignment.Left
-UserIdLabel.Text = "ID: 00000000"
+UserIdLabel.Text = "USER ID: --"
 UserIdLabel.BackgroundTransparency = 1
 UserIdLabel.Parent = InfoFrame
 
 local HealthBackground = Instance.new("Frame")
-HealthBackground.Size = UDim2.new(1, -24, 0, 6)
-HealthBackground.Position = UDim2.new(0, 12, 1, -16)
-HealthBackground.BackgroundColor3 = Color3.fromRGB(30, 15, 15) 
-HealthBackground.Parent = MainFrame
+HealthBackground.Size = UDim2.new(1, -28, 0, 5)
+HealthBackground.Position = UDim2.new(0, 14, 1, -16)
+HealthBackground.BackgroundColor3 = Color3.fromRGB(20, 25, 20)
+HealthBackground.BorderSizePixel = 0
+HealthBackground.Parent = MainCanvas
 
 local HealthBarCorner = Instance.new("UICorner")
-HealthBarCorner.CornerRadius = UDim.new(0, 3)
+HealthBarCorner.CornerRadius = UDim.new(0, 4)
 HealthBarCorner.Parent = HealthBackground
 
 local HealthBar = Instance.new("Frame")
 HealthBar.Size = UDim2.new(1, 0, 1, 0)
-HealthBar.BackgroundColor3 = Color3.fromRGB(0, 255, 120)
+HealthBar.BackgroundColor3 = Color3.fromRGB(0, 255, 100)
+HealthBar.BorderSizePixel = 0
 HealthBar.Parent = HealthBackground
 
 local MainBarCorner = Instance.new("UICorner")
-MainBarCorner.CornerRadius = UDim.new(0, 3)
+MainBarCorner.CornerRadius = UDim.new(0, 4)
 MainBarCorner.Parent = HealthBar
+
+local isHudVisible = false
+local function ToggleHUD(state)
+    if state then
+        if not isHudVisible then
+            isHudVisible = true
+            MainCanvas.Visible = true
+            TweenService:Create(MainCanvas, TweenInfo.new(0.2, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {GroupTransparency = 0}):Play()
+        end
+    else
+        if isHudVisible then
+            isHudVisible = false
+            local fadeOut = TweenService:Create(MainCanvas, TweenInfo.new(0.2, Enum.EasingStyle.Cubic, Enum.EasingDirection.In), {GroupTransparency = 1})
+            fadeOut:Play()
+            fadeOut.Completed:Connect(function()
+                if not isHudVisible then MainCanvas.Visible = false end
+            end)
+        end
+    end
+end
+-- =============================================================================
 
 local EspGui = Instance.new("ScreenGui")
 EspGui.Name = "hooksenseModernEspGui"
@@ -822,29 +887,28 @@ RunService.RenderStepped:Connect(function()
         if Hum then
             DisplayNameLabel.Text = CurrentTargetPlayer.DisplayName
             UsernameLabel.Text = "@" .. CurrentTargetPlayer.Name
-            UserIdLabel.Text = "ID: " .. tostring(CurrentTargetPlayer.UserId)
+            UserIdLabel.Text = "USER ID: " .. tostring(CurrentTargetPlayer.UserId)
             
             local pct = math.clamp(Hum.Health / Hum.MaxHealth, 0, 1)
             
             if CurrentTargetPlayer.UserId ~= LastLoggedHudTargetId then
                 currentHudHealthLerp = pct
                 LastLoggedHudTargetId = CurrentTargetPlayer.UserId
-                AvatarImage.Image = "rbxthumb://type=AvatarHeadShot&id=" .. tostring(CurrentTargetPlayer.UserId) .. "&w=48&h=48"
+                AvatarImage.Image = "rbxthumb://type=AvatarHeadShot&id=" .. tostring(CurrentTargetPlayer.UserId) .. "&w=150&h=150"
             end
             
-            currentHudHealthLerp = currentHudHealthLerp + (pct - currentHudHealthLerp) * 0.10
-            
+            currentHudHealthLerp = currentHudHealthLerp + (pct - currentHudHealthLerp) * 0.12
             HealthBar.Size = UDim2.new(currentHudHealthLerp, 0, 1, 0)
-            HealthBar.BackgroundColor3 = Color3.fromHSV(currentHudHealthLerp * 0.33, 1, 1)
+            HealthBar.BackgroundColor3 = Color3.fromHSV(currentHudHealthLerp * 0.38, 0.9, 1)
             
             BindHealthTracker(CurrentTargetPlayer)
-            MainFrame.Visible = true
+            ToggleHUD(true)
         else
-            MainFrame.Visible = false
+            ToggleHUD(false)
             LastLoggedHudTargetId = 0
         end
     else
-        MainFrame.Visible = false
+        ToggleHUD(false)
         LastLoggedHudTargetId = 0
     end
 
@@ -920,6 +984,8 @@ RunService.RenderStepped:Connect(function()
         local head = char and char:FindFirstChild("Head")
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
         local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+        
+        -- แก้ไขจุดนี้: แก้ไวยากรณ์ผิดพลาด นำตัวแปรแปลกปลอมออก
         if _G.ESPEnabled and char and head and hrp and humanoid and humanoid.Health > 0 then
             if _G.TeamCheckEnabled and player.Team == LocalPlayer.Team then
                 local highlight = char:FindFirstChild("hooksenseHighlight")
@@ -1581,8 +1647,8 @@ Options.WeatherDropdown:OnChanged(function()
     end
 end)
 
-local AddonGroupBox = Tabs.Addons:AddLeftGroupbox("loaders Scripts")
-AddonGroupBox:AddButton({ Text = "load walkspeed", Func = function()
+local BlacklistPlayersGroup = Tabs.Addons:AddLeftGroupbox("loaders Scripts")
+BlacklistPlayersGroup:AddButton({ Text = "load walkspeed", Func = function()
     local success, err = pcall(function()
         loadstring(game:HttpGet('https://raw.githubusercontent.com/19mdSkibidi/19sMooze-Mobile-Rework/refs/heads/main/Mooze%20Mob'))()
     end)
@@ -1593,7 +1659,7 @@ AddonGroupBox:AddButton({ Text = "load walkspeed", Func = function()
     end
 end })
 
-AddonGroupBox:AddButton({ Text = "load drawing esp", Func = function()
+BlacklistPlayersGroup:AddButton({ Text = "load drawing esp", Func = function()
     local success, err = pcall(function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/xqmt/Drawing-Esp-/refs/heads/main/99"))()
     end)
