@@ -12,7 +12,6 @@ local Window = Library:CreateWindow({
     Center = true,
     AutoShow = true,
     Resizable = true,
-    ShowCustomCursor = true,
     UnlockMouseWhileOpen = true,
     NotifySide = "Left",
     TabPadding = 8,
@@ -172,7 +171,6 @@ local CurrentWeatherEffect = nil
 local DisplayNameLabel, UsernameLabel, UserIdLabel
 local ESP_Storage = {}
 
--- ค้นหา PlayerGui เพื่อความชัวร์บน Delta Emulator
 local TargetGuiParent = LocalPlayer:WaitForChild("PlayerGui", 5) or (CoreGui:FindFirstChild("RobloxGui") or CoreGui)
 
 local HitNotifyGui = Instance.new("ScreenGui")
@@ -181,7 +179,6 @@ HitNotifyGui.ResetOnSpawn = false
 HitNotifyGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 HitNotifyGui.Parent = TargetGuiParent
 
--- แก้ไข Hit Overlay GUI ให้ใช้ Frame แทน ImageLabel เพื่อรันบนโมบายชัวร์ 100%
 local HitOverlayGui = Instance.new("ScreenGui")
 HitOverlayGui.Name = "hooksense_HitOverlayGui"
 HitOverlayGui.ResetOnSpawn = false
@@ -382,8 +379,8 @@ local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 260, 0, 85)
 MainFrame.Position = UDim2.new(0, 20, 0, 60)
-MainFrame.BackgroundColor3 = Color3.fromRGB(5, 5, 6) -- แก้ไข: เปลี่ยนเป็นสีดำเข้มสนิทตามต้องการ
-MainFrame.BackgroundTransparency = 0.05 -- แก้ไข: ปรับให้เข้มทึบเห็นชัดเจนสไตล์โมเดิร์น
+MainFrame.BackgroundColor3 = Color3.fromRGB(5, 5, 6) 
+MainFrame.BackgroundTransparency = 0.05 
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Visible = false
@@ -394,7 +391,7 @@ Corner.CornerRadius = UDim.new(0, 8)
 Corner.Parent = MainFrame
 
 local Stroke = Instance.new("UIStroke")
-Stroke.Color = Color3.fromRGB(35, 35, 40) -- แก้ไข: ปรับเส้นขอบให้ดูนวลกลืนกับพื้นหลังดำเข้ม
+Stroke.Color = Color3.fromRGB(35, 35, 40) 
 Stroke.Thickness = 1.5
 Stroke.Parent = MainFrame
 
@@ -434,7 +431,7 @@ AvatarImage.BorderSizePixel = 0
 AvatarImage.Parent = MainFrame
 
 local ImgCorner = Instance.new("UICorner")
-ImgCorner.CornerRadius = UDim.new(0, 6)
+ImgCorner.CornerRadius = UDim.new(1, 0)
 ImgCorner.Parent = AvatarImage
 
 local InfoFrame = Instance.new("Frame")
@@ -478,7 +475,7 @@ UserIdLabel.Parent = InfoFrame
 local HealthBackground = Instance.new("Frame")
 HealthBackground.Size = UDim2.new(1, -24, 0, 6)
 HealthBackground.Position = UDim2.new(0, 12, 1, -16)
-HealthBackground.BackgroundColor3 = Color3.fromRGB(30, 15, 15) -- แก้ไข: ปรับสีพื้นหลอดเลือดให้เข้ากับธีมมืด
+HealthBackground.BackgroundColor3 = Color3.fromRGB(30, 15, 15) 
 HealthBackground.Parent = MainFrame
 
 local HealthBarCorner = Instance.new("UICorner")
@@ -754,7 +751,7 @@ local RunService = game:GetService("RunService")
 local spinAngle = 0
 local jitterToggle = false
 local LastLoggedHudTargetId = 0
-local currentHudHealthLerp = 0 -- เพิ่มตัวแปรสำหรับจำค่า Lerp ล่าสุดของหลอดเลือด
+local currentHudHealthLerp = 0 
 
 RunService.RenderStepped:Connect(function()
     local Center = getScreenCenter()
@@ -829,14 +826,12 @@ RunService.RenderStepped:Connect(function()
             
             local pct = math.clamp(Hum.Health / Hum.MaxHealth, 0, 1)
             
-            -- แก้ไข: เพิ่มระบบสลับเป้าหมายแบบทันที ไม่ให้หลอดเลือดอนิเมชันลากค้างมาจากเป้าหมายเก่า
             if CurrentTargetPlayer.UserId ~= LastLoggedHudTargetId then
                 currentHudHealthLerp = pct
                 LastLoggedHudTargetId = CurrentTargetPlayer.UserId
                 AvatarImage.Image = "rbxthumb://type=AvatarHeadShot&id=" .. tostring(CurrentTargetPlayer.UserId) .. "&w=48&h=48"
             end
             
-            -- แก้ไข: คำนวณ Health Bar Lerp 0.10x แบบสมูท
             currentHudHealthLerp = currentHudHealthLerp + (pct - currentHudHealthLerp) * 0.10
             
             HealthBar.Size = UDim2.new(currentHudHealthLerp, 0, 1, 0)
