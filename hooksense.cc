@@ -160,6 +160,16 @@ _G.ThirdPersonDistance = 12
 _G.BhopEnabled = false
 _G.BhopSpeedMultiplier = 1.5
 
+-- [TARGET HUD CONFIG GLOBAL VARIABLES]
+_G.TargetHudToggle = true
+_G.TargetHudPosX = 0
+_G.TargetHudPosY = 0
+_G.TargetHudBorderColor1 = Color3.fromRGB(0, 255, 100)
+_G.TargetHudBorderColor2 = Color3.fromRGB(0, 150, 0)
+_G.TargetHudHealthHigh = Color3.fromRGB(0, 255, 100)
+_G.TargetHudHealthMid = Color3.fromRGB(255, 200, 0)
+_G.TargetHudHealthLow = Color3.fromRGB(255, 50, 50)
+
 local Camera = workspace.CurrentCamera
 local Players = game.Players
 local LocalPlayer = Players.LocalPlayer
@@ -371,7 +381,7 @@ local function UpdateSkybox()
 end
 
 -- =============================================================================
--- [UPGRADED ULTRA CYBERPUNK TARGET HUD SYSTEM - GREEN & BLACK THEME]
+-- [UPGRADED ULTRA CYBERPUNK TARGET HUD SYSTEM - INITIALIZED AT TOP RIGHT]
 -- =============================================================================
 local TargetGui = Instance.new("ScreenGui")
 TargetGui.Name = "hooksenseTargetHudGui"
@@ -382,8 +392,8 @@ TargetGui.Parent = TargetGuiParent
 local MainCanvas = Instance.new("CanvasGroup")
 MainCanvas.Name = "MainTargetHUD"
 MainCanvas.Size = UDim2.new(0, 280, 0, 90)
-MainCanvas.AnchorPoint = Vector2.new(1, 0)
-MainCanvas.Position = UDim2.new(1, -20, 0, 60)
+MainCanvas.AnchorPoint = Vector2.new(1, 0) -- Set anchor point to top-right
+MainCanvas.Position = UDim2.new(1, -20, 0, 20) -- Set initial position to top-right beautifully
 MainCanvas.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 MainCanvas.BackgroundTransparency = 0.15 
 MainCanvas.BorderSizePixel = 0
@@ -403,52 +413,11 @@ Stroke.Parent = MainCanvas
 
 local BorderGradient = Instance.new("UIGradient")
 BorderGradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 100)),
-    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 150, 0)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 255, 100))
+    ColorSequenceKeypoint.new(0, _G.TargetHudBorderColor1),
+    ColorSequenceKeypoint.new(1, _G.TargetHudBorderColor2)
 })
 BorderGradient.Rotation = 45
 BorderGradient.Parent = Stroke
-
-local dragging = false
-local dragInput
-local dragStart
-local startPos
-
-local function update(input)
-    local delta = input.Position - dragStart
-    TweenService:Create(MainCanvas, TweenInfo.new(0.08, Enum.EasingStyle.OutQuad), {
-        Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    }):Play()
-end
-
-MainCanvas.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = MainCanvas.Position
-        
-        local connection
-        connection = input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-                if connection then connection:Disconnect() end
-            end
-        end)
-    end
-end)
-
-MainCanvas.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if dragging and (input == dragInput or input.UserInputType == Enum.UserInputType.Touch) then
-        update(input)
-    end
-end)
 
 local AvatarFrame = Instance.new("Frame")
 AvatarFrame.Size = UDim2.new(0, 56, 0, 56)
@@ -527,7 +496,7 @@ HealthBarCorner.Parent = HealthBackground
 
 local HealthBar = Instance.new("Frame")
 HealthBar.Size = UDim2.new(1, 0, 1, 0)
-HealthBar.BackgroundColor3 = Color3.fromRGB(0, 255, 100)
+HealthBar.BackgroundColor3 = _G.TargetHudHealthHigh
 HealthBar.BorderSizePixel = 0
 HealthBar.Parent = HealthBackground
 
@@ -537,7 +506,7 @@ MainBarCorner.Parent = HealthBar
 
 local isHudVisible = false
 local function ToggleHUD(state)
-    if state then
+    if state and _G.TargetHudToggle then
         if not isHudVisible then
             isHudVisible = true
             MainCanvas.Visible = true
@@ -882,7 +851,10 @@ RunService.RenderStepped:Connect(function()
         Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, _G.AimbotSmoothness)
     end
 
-    if (_G.SilentAimEnabled or _G.MobileAimbotEnabled) and CurrentTargetPlayer and CurrentTargetPlayer.Character then
+    -- Update Target HUD Position relative to top-right corner dynamically based on sliders
+    MainCanvas.Position = UDim2.new(1, -20 + _G.TargetHudPosX, 0, 20 + _G.TargetHudPosY)
+
+    if (_G.SilentAimEnabled or _G.MobileAimbotEnabled) and CurrentTargetPlayer and CurrentTargetPlayer.Character and _G.TargetHudToggle then
         local Hum = CurrentTargetPlayer.Character:FindFirstChildOfClass("Humanoid")
         if Hum then
             DisplayNameLabel.Text = CurrentTargetPlayer.DisplayName
@@ -899,7 +871,15 @@ RunService.RenderStepped:Connect(function()
             
             currentHudHealthLerp = currentHudHealthLerp + (pct - currentHudHealthLerp) * 0.12
             HealthBar.Size = UDim2.new(currentHudHealthLerp, 0, 1, 0)
-            HealthBar.BackgroundColor3 = Color3.fromHSV(currentHudHealthLerp * 0.38, 0.9, 1)
+            
+            -- Dynamic Health Bar Color System
+            if currentHudHealthLerp > 0.6 then
+                HealthBar.BackgroundColor3 = _G.TargetHudHealthHigh
+            elseif currentHudHealthLerp > 0.3 then
+                HealthBar.BackgroundColor3 = _G.TargetHudHealthMid
+            else
+                HealthBar.BackgroundColor3 = _G.TargetHudHealthLow
+            end
             
             BindHealthTracker(CurrentTargetPlayer)
             ToggleHUD(true)
@@ -985,7 +965,6 @@ RunService.RenderStepped:Connect(function()
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
         local humanoid = char and char:FindFirstChildOfClass("Humanoid")
         
-        -- แก้ไขจุดนี้: แก้ไวยากรณ์ผิดพลาด นำตัวแปรแปลกปลอมออก
         if _G.ESPEnabled and char and head and hrp and humanoid and humanoid.Health > 0 then
             if _G.TeamCheckEnabled and player.Team == LocalPlayer.Team then
                 local highlight = char:FindFirstChild("hooksenseHighlight")
@@ -1647,7 +1626,64 @@ Options.WeatherDropdown:OnChanged(function()
     end
 end)
 
+-- =============================================================================
+-- [ADDONS TAB MODIFICATIONS - CONTROL TARGET HUD POSITION EXCLUSIVELY HERE]
+-- =============================================================================
 local BlacklistPlayersGroup = Tabs.Addons:AddLeftGroupbox("loaders Scripts")
+local TargetHudConfigGroup = Tabs.Addons:AddRightGroupbox("Target HUD Settings")
+
+-- Target HUD Controls
+TargetHudConfigGroup:AddToggle("TargetHudMasterToggle", { Text = "Enable Target HUD", Default = true })
+Toggles.TargetHudMasterToggle:OnChanged(function()
+    _G.TargetHudToggle = Toggles.TargetHudMasterToggle.Value
+end)
+
+TargetHudConfigGroup:AddSlider("TargetHudPosXSlider", { Text = "Position X Offset", Default = 0, Min = -1000, Max = 1000, Rounding = 0 })
+Options.TargetHudPosXSlider:OnChanged(function()
+    _G.TargetHudPosX = Options.TargetHudPosXSlider.Value
+end)
+
+TargetHudConfigGroup:AddSlider("TargetHudPosYSlider", { Text = "Position Y Offset", Default = 0, Min = -1000, Max = 1000, Rounding = 0 })
+Options.TargetHudPosYSlider:OnChanged(function()
+    _G.TargetHudPosY = Options.TargetHudPosYSlider.Value
+end)
+
+-- Gradient Border Colors
+TargetHudConfigGroup:AddLabel("Border Color 1"):AddColorPicker("HudBorderColor1Picker", { Default = Color3.fromRGB(0, 255, 100) })
+Options.HudBorderColor1Picker:OnChanged(function()
+    _G.TargetHudBorderColor1 = Options.HudBorderColor1Picker.Value
+    BorderGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, _G.TargetHudBorderColor1),
+        ColorSequenceKeypoint.new(1, _G.TargetHudBorderColor2)
+    })
+end)
+
+TargetHudConfigGroup:AddLabel("Border Color 2"):AddColorPicker("HudBorderColor2Picker", { Default = Color3.fromRGB(0, 150, 0) })
+Options.HudBorderColor2Picker:OnChanged(function()
+    _G.TargetHudBorderColor2 = Options.HudBorderColor2Picker.Value
+    BorderGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, _G.TargetHudBorderColor1),
+        ColorSequenceKeypoint.new(1, _G.TargetHudBorderColor2)
+    })
+end)
+
+-- Health Status Colors (High, Mid, Low)
+TargetHudConfigGroup:AddLabel("Health Color: High (>60%)"):AddColorPicker("HudHealthHighPicker", { Default = Color3.fromRGB(0, 255, 100) })
+Options.HudHealthHighPicker:OnChanged(function()
+    _G.TargetHudHealthHigh = Options.HudHealthHighPicker.Value
+end)
+
+TargetHudConfigGroup:AddLabel("Health Color: Medium (30%-60%)"):AddColorPicker("HudHealthMidPicker", { Default = Color3.fromRGB(255, 200, 0) })
+Options.HudHealthMidPicker:OnChanged(function()
+    _G.TargetHudHealthMid = Options.HudHealthMidPicker.Value
+end)
+
+TargetHudConfigGroup:AddLabel("Health Color: Low (<30%)"):AddColorPicker("HudHealthLowPicker", { Default = Color3.fromRGB(255, 50, 50) })
+Options.HudHealthLowPicker:OnChanged(function()
+    _G.TargetHudHealthLow = Options.HudHealthLowPicker.Value
+end)
+
+
 BlacklistPlayersGroup:AddButton({ Text = "load walkspeed", Func = function()
     local success, err = pcall(function()
         loadstring(game:HttpGet('https://raw.githubusercontent.com/19mdSkibidi/19sMooze-Mobile-Rework/refs/heads/main/Mooze%20Mob'))()
