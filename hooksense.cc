@@ -1081,8 +1081,8 @@ local Tabs = {
     ESP = Window:AddTab("Esp"),
     Movement = Window:AddTab("Character"),
     World = Window:AddTab("World"),
-    Addons = Window:AddTab("Addons"),
-    ['UI'] = Window:AddTab("Setting")
+    Addons = Window:AddTab("Misc"),
+    ['UI'] = Window:AddTab("Ui setting")
 }
 
 local Options = getgenv().Options
