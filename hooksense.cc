@@ -5,16 +5,16 @@ local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
 
 Library.ShowToggleFrameInKeybinds = true
 Library.ShowCustomCursor = true
-Library.NotifySide = "Right"
+Library.NotifySide = "Right" -- กำหนดให้แสดงผลฝั่งขวาเป็นค่าเริ่มต้นของระบบ
 
 local Window = Library:CreateWindow({
     Title = "hooksenseㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ",
-    Center = true,
+    Center = true, -- ตั้งค่าให้หน้าต่างเปิดมาอยู่ตรงกลางหน้าจอ
     AutoShow = true,
     Resizable = true,
     ShowCustomCursor = true,
     UnlockMouseWhileOpen = true,
-    NotifySide = "Left",
+    NotifySide = "Right", -- แก้ไขจาก "Left" เป็น "Right" เพื่อไม่ให้ทับกับค่าข้างบน
     TabPadding = 8,
     MenuFadeTime = 0.2
 })
@@ -79,6 +79,9 @@ _G.PermLockEnabled = false
 _G.PermTargetList = {}
 _G.GlobalFontSetting = Enum.Font.Cartoon
 
+-- Custom FOV Variable
+_G.CustomFOVValue = 70
+
 local RobloxFontsList = {}
 for _, font in ipairs(Enum.Font:GetEnumItems()) do
     table.insert(RobloxFontsList, font.Name)
@@ -99,15 +102,14 @@ local SoundIDs = {
     ["Skeet"] = "rbxassetid://80461265049096"
 }
 
-_G.HitNotifyEnabled = false
-_G.HitNotifyStyle = "Center"
-_G.HitNotifyAnimType = "Smooth"
-_G.HitNotifyTransparency = 0.0
-_G.HitNotifyPosX = 50
-_G.HitNotifyPosY = 80
+-- [Hit Notify Settings Global & Custom]
+_G.HitNotifyEnabled = false 
 _G.HitNotifyDuration = 2.5
-_G.HitNotifyColor = Color3.fromRGB(0, 255, 255)
-local ActiveNotifications = {}
+_G.HitNotifyTransparency = 0.0
+_G.HitNotifyFont = Enum.Font.Cartoon
+_G.HitNotifyTemplate = "Hit {name} in the {part} for {dmg} dmg"
+_G.HitNotifyPosX = 50 -- ปรับเริ่มต้นให้เป็น 50 (ตรงกลาง)
+_G.HitNotifyPosY = 65
 
 -- Hit Overlay Variables
 _G.HitOverlayEnabled = false
@@ -170,6 +172,15 @@ _G.TargetHudHealthHigh = Color3.fromRGB(0, 255, 100)
 _G.TargetHudHealthMid = Color3.fromRGB(255, 200, 0)
 _G.TargetHudHealthLow = Color3.fromRGB(255, 50, 50)
 
+-- [ATMOSPHERE GLOBAL VARIABLES]
+_G.AtmosphereEnabled = false 
+_G.AtmosphereColor = Color3.fromRGB(178, 200, 255)
+_G.AtmosphereDecay = Color3.fromRGB(255, 178, 120)
+_G.AtmosphereGlare = 0.4
+_G.AtmosphereHaze = 1.2
+_G.AtmosphereOffset = 0.25
+_G.AtmosphereDensity = 0.35
+
 local Camera = workspace.CurrentCamera
 local Players = game.Players
 local LocalPlayer = Players.LocalPlayer
@@ -178,17 +189,10 @@ local UserInputService = game:GetService("UserInputService")
 local SoundService = game:GetService("SoundService")
 local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
-local CurrentWeatherEffect = nil
 local DisplayNameLabel, UsernameLabel, UserIdLabel, AvatarImage
 local ESP_Storage = {}
 
 local TargetGuiParent = LocalPlayer:WaitForChild("PlayerGui", 5) or (CoreGui:FindFirstChild("RobloxGui") or CoreGui)
-
-local HitNotifyGui = Instance.new("ScreenGui")
-HitNotifyGui.Name = "hooksense_HitNotifyGui"
-HitNotifyGui.ResetOnSpawn = false
-HitNotifyGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-HitNotifyGui.Parent = TargetGuiParent
 
 local HitOverlayGui = Instance.new("ScreenGui")
 HitOverlayGui.Name = "hooksense_HitOverlayGui"
@@ -220,125 +224,76 @@ local function TriggerHitOverlay()
     end)
 end
 
-local function UpdateNotificationPositions()
-    local spacing = 35
-    for index, frame in ipairs(ActiveNotifications) do
-        local rawX = _G.HitNotifyPosX / 100
-        local rawY = _G.HitNotifyPosY / 100
-        local offsetUp = (index - 1) * spacing
-        local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
-        local targetPosition
-        if _G.HitNotifyStyle == "Left" then
-            targetPosition = UDim2.new(rawX, 15, rawY, -offsetUp)
-        elseif _G.HitNotifyStyle == "Center" then
-            targetPosition = UDim2.new(rawX, 0, rawY, -offsetUp)
-        else
-            targetPosition = UDim2.new(rawX, -15, rawY, -offsetUp)
-        end
-        TweenService:Create(frame, tweenInfo, {Position = targetPosition}):Play()
-    end
-end
+-- [ระบบแจ้งเตือนกลางหน้าจอแบบแยกส่วน - แก้ไขจุด AnchorPoint ให้ตรงกลางไม่เบี้ยวขวา]
+local CenterNotifyGui = Instance.new("ScreenGui")
+CenterNotifyGui.Name = "hooksense_CenterNotifyGui"
+CenterNotifyGui.ResetOnSpawn = false
+CenterNotifyGui.Parent = TargetGuiParent
 
-local function ShowCustomHitNotification(targetName, partName, damage)
+local CenterNotifyContainer = Instance.new("Frame")
+CenterNotifyContainer.Name = "NotifyContainer"
+CenterNotifyContainer.Size = UDim2.new(0.6, 0, 0.4, 0)
+CenterNotifyContainer.AnchorPoint = Vector2.new(0.5, 0.5) -- บังคับอ้างอิงจุดกึ่งกลางของกรอบ
+CenterNotifyContainer.Position = UDim2.new(_G.HitNotifyPosX / 100, 0, _G.HitNotifyPosY / 100, 0)
+CenterNotifyContainer.BackgroundTransparency = 1
+CenterNotifyContainer.BorderSizePixel = 0
+CenterNotifyContainer.Parent = CenterNotifyGui
+
+local CenterNotifyLayout = Instance.new("UIListLayout")
+CenterNotifyLayout.FillDirection = Enum.FillDirection.Vertical
+CenterNotifyLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+CenterNotifyLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
+CenterNotifyLayout.SortOrder = Enum.SortOrder.LayoutOrder
+CenterNotifyLayout.Padding = UDim.new(0, 5)
+CenterNotifyLayout.Parent = CenterNotifyContainer
+
+local function ShowCustomHitNotification(targetName, partName, damage, weaponName)
     if not _G.HitNotifyEnabled then return end
-    local NotifyFrame = Instance.new("Frame")
-    NotifyFrame.Size = UDim2.new(0, 240, 0, 30)
-    if _G.HitNotifyStyle == "Left" then
-        NotifyFrame.AnchorPoint = Vector2.new(0, 1)
-    elseif _G.HitNotifyStyle == "Center" then
-        NotifyFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-    else
-        NotifyFrame.AnchorPoint = Vector2.new(1, 1)
-    end
-    local rawX = _G.HitNotifyPosX / 100
-    local rawY = _G.HitNotifyPosY / 100
-    local finalPosition = UDim2.new(rawX, (_G.HitNotifyStyle == "Left" and 15 or (_G.HitNotifyStyle == "Right" and -15 or 0)), rawY, 0)
-    NotifyFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
-    NotifyFrame.BorderSizePixel = 0
-    NotifyFrame.ZIndex = 10
-    NotifyFrame.Parent = HitNotifyGui
+    
+    weaponName = weaponName or "Unknown"
+    
+    local notifyText = _G.HitNotifyTemplate
+    notifyText = string.gsub(notifyText, "{name}", targetName)
+    notifyText = string.gsub(notifyText, "{part}", partName)
+    notifyText = string.gsub(notifyText, "{dmg}", tostring(damage))
+    notifyText = string.gsub(notifyText, "{weapon}", weaponName)
+    
+    -- สร้างแผ่นข้อความแจ้งเตือนกลางจอ
+    local NotifyLabel = Instance.new("TextLabel")
+    NotifyLabel.Size = UDim2.new(1, 0, 0, 24)
+    NotifyLabel.BackgroundTransparency = 1
+    NotifyLabel.Text = notifyText
+    NotifyLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    NotifyLabel.TextSize = 16
+    NotifyLabel.Font = _G.HitNotifyFont
+    NotifyLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    
+    -- ตั้งค่าเริ่มต้นให้อยู่ต่ำลงไป 15 พิกเซล และโปร่งใส 100% สำหรับการเตรียมลอยขึ้น
+    NotifyLabel.Position = UDim2.new(0, 0, 0, 15)
+    NotifyLabel.TextTransparency = 1
+    NotifyLabel.TextStrokeTransparency = 1
+    NotifyLabel.Parent = CenterNotifyContainer
 
-    local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 5)
-    Corner.Parent = NotifyFrame
-
-    local Stroke = Instance.new("UIStroke")
-    Stroke.Color = _G.HitNotifyColor
-    Stroke.Thickness = 1.2
-    Stroke.Parent = NotifyFrame
-
-    local CheckmarkIcon = Instance.new("TextLabel")
-    CheckmarkIcon.Name = "CheckmarkIcon"
-    CheckmarkIcon.Size = UDim2.new(0, 20, 1, 0)
-    CheckmarkIcon.Position = UDim2.new(0, 6, 0, 0)
-    CheckmarkIcon.Font = Enum.Font.GothamBold
-    CheckmarkIcon.TextSize = 12
-    CheckmarkIcon.Text = "✓"
-    CheckmarkIcon.TextColor3 = _G.HitNotifyColor
-    CheckmarkIcon.BackgroundTransparency = 1
-    CheckmarkIcon.TextXAlignment = Enum.TextXAlignment.Center
-    CheckmarkIcon.Parent = NotifyFrame
-
-    local TextLabel = Instance.new("TextLabel")
-    TextLabel.Name = "NotifyTextLabel"
-    TextLabel.Size = UDim2.new(1, -34, 1, 0)
-    TextLabel.Position = UDim2.new(0, 28, 0, 0)
-    TextLabel.Font = _G.GlobalFontSetting
-    TextLabel.TextSize = 11
-    TextLabel.TextWrapped = true
-    TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TextLabel.BackgroundTransparency = 1
-    TextLabel.TextXAlignment = Enum.TextXAlignment.Left
-    TextLabel.Text = string.format("Hit %s in the %s for %s dmg", targetName, partName, tostring(damage))
-    TextLabel.Parent = NotifyFrame
-
-    if _G.HitNotifyAnimType == "Tween Inside" then
-        local UIScale = Instance.new("UIScale")
-        UIScale.Scale = 0.4
-        UIScale.Parent = NotifyFrame
-        NotifyFrame.Position = finalPosition
-        NotifyFrame.BackgroundTransparency = _G.HitNotifyTransparency
-        Stroke.Transparency = _G.HitNotifyTransparency
-        TextLabel.TextTransparency = _G.HitNotifyTransparency
-        CheckmarkIcon.TextTransparency = _G.HitNotifyTransparency
-        TweenService:Create(UIScale, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1}):Play()
-    else
-        NotifyFrame.Position = finalPosition + UDim2.new(0, 0, 0, 20)
-        NotifyFrame.BackgroundTransparency = 1
-        Stroke.Transparency = 1
-        TextLabel.TextTransparency = 1
-        CheckmarkIcon.TextTransparency = 1
-        TweenService:Create(NotifyFrame, TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Position = finalPosition, BackgroundTransparency = _G.HitNotifyTransparency}):Play()
-        TweenService:Create(Stroke, TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Transparency = _G.HitNotifyTransparency}):Play()
-        TweenService:Create(TextLabel, TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {TextTransparency = _G.HitNotifyTransparency}):Play()
-        TweenService:Create(CheckmarkIcon, TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {TextTransparency = _G.HitNotifyTransparency}):Play()
-    end
-
-    table.insert(ActiveNotifications, 1, NotifyFrame)
-    UpdateNotificationPositions()
+    -- ทวีนเฟดเข้าและยกตำแหน่งตัวอักษรลอยขึ้นแบบนุ่มนวล (OutBack)
+    local openTween = TweenService:Create(NotifyLabel, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+        Position = UDim2.new(0, 0, 0, 0), -- กลับขึ้นมาตำแหน่งปกติ
+        TextTransparency = _G.HitNotifyTransparency,
+        TextStrokeTransparency = math.clamp(_G.HitNotifyTransparency + 0.4, 0, 1)
+    })
+    openTween:Play()
 
     task.delay(_G.HitNotifyDuration, function()
-        local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Linear)
-        local tween = TweenService:Create(NotifyFrame, tweenInfo, {BackgroundTransparency = 1})
-        local tweenText = TweenService:Create(TextLabel, tweenInfo, {TextTransparency = 1})
-        local tweenIcon = TweenService:Create(CheckmarkIcon, tweenInfo, {TextTransparency = 1})
-        local tweenStroke = TweenService:Create(Stroke, tweenInfo, {Transparency = 1})
-        if _G.HitNotifyAnimType == "Tween Inside" and NotifyFrame:FindFirstChildOfClass("UIScale") then
-            TweenService:Create(NotifyFrame:FindFirstChildOfClass("UIScale"), TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {Scale = 0.75}):Play()
-        end
-        tween:Play()
-        tweenText:Play()
-        tweenIcon:Play()
-        tweenStroke:Play()
-        tween.Completed:Connect(function()
-            for i, frame in ipairs(ActiveNotifications) do
-                if frame == NotifyFrame then
-                    table.remove(ActiveNotifications, i)
-                    break
-                end
-            end
-            NotifyFrame:Destroy()
-            UpdateNotificationPositions()
+        if not NotifyLabel or not NotifyLabel.Parent then return end
+        
+        -- ทวีนเฟดออกและเลื่อนตำแหน่งลงด้านล่าง (Bottom)
+        local closeTween = TweenService:Create(NotifyLabel, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+            Position = UDim2.new(0, 0, 0, 25), -- ดันลงไปข้างล่าง 25 พิกเซล
+            TextTransparency = 1,
+            TextStrokeTransparency = 1
+        })
+        closeTween:Play()
+        closeTween.Completed:Connect(function()
+            NotifyLabel:Destroy()
         end)
     end)
 end
@@ -380,9 +335,40 @@ local function UpdateSkybox()
     end
 end
 
--- =============================================================================
--- [UPGRADED ULTRA CYBERPUNK TARGET HUD SYSTEM - INITIALIZED AT TOP RIGHT]
--- =============================================================================
+local function UpdateAtmosphere()
+    local atmos = Lighting:FindFirstChildOfClass("Atmosphere")
+    if _G.AtmosphereEnabled then
+        if not atmos then
+            atmos = Instance.new("Atmosphere")
+            atmos.Parent = Lighting
+        end
+        atmos.Color = _G.AtmosphereColor
+        atmos.Decay = _G.AtmosphereDecay
+        atmos.Glare = _G.AtmosphereGlare
+        atmos.Haze = _G.AtmosphereHaze
+        atmos.Offset = _G.AtmosphereOffset
+        atmos.Density = _G.AtmosphereDensity
+        
+        if not Lighting:FindFirstChildOfClass("Sky") then
+            local DefaultSky = Instance.new("Sky")
+            DefaultSky.Name = "hooksenseDefaultSky"
+            DefaultSky.Parent = Lighting
+        end
+    else
+        if atmos then
+            atmos:Destroy()
+        end
+        if not _G.SkyboxEnabled then
+            local defaultSky = Lighting:FindFirstChild("hooksenseDefaultSky")
+            if defaultSky then
+                defaultSky:Destroy()
+            end
+        end
+    end
+end
+
+UpdateAtmosphere()
+
 local TargetGui = Instance.new("ScreenGui")
 TargetGui.Name = "hooksenseTargetHudGui"
 TargetGui.ResetOnSpawn = false
@@ -392,11 +378,10 @@ TargetGui.Parent = TargetGuiParent
 local MainCanvas = Instance.new("CanvasGroup")
 MainCanvas.Name = "MainTargetHUD"
 MainCanvas.Size = UDim2.new(0, 280, 0, 90)
-MainCanvas.AnchorPoint = Vector2.new(1, 0) -- Set anchor point to top-right
-MainCanvas.Position = UDim2.new(1, -20, 0, 20) -- Set initial position to top-right beautifully
+MainCanvas.AnchorPoint = Vector2.new(1, 0)
+MainCanvas.Position = UDim2.new(1, -20, 0, 20)
 MainCanvas.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 MainCanvas.BackgroundTransparency = 0.15 
-MainCanvas.BorderSizePixel = 0
 MainCanvas.GroupTransparency = 1 
 MainCanvas.Visible = false
 MainCanvas.Parent = TargetGui
@@ -523,7 +508,6 @@ local function ToggleHUD(state)
         end
     end
 end
--- =============================================================================
 
 local EspGui = Instance.new("ScreenGui")
 EspGui.Name = "hooksenseModernEspGui"
@@ -566,9 +550,11 @@ FOVCircle.Filled = false
 FOVCircle.Visible = _G.FOVVisible
 
 local TracerLineOutline = Drawing.new("Line")
+TracerLineOutline.Thickness = 3.0
 TracerLineOutline.Transparency = 1.0
 
 local TracerLine = Drawing.new("Line")
+TracerLine.Thickness = 1.0
 TracerLine.Transparency = 0.8
 
 local function getScreenCenter()
@@ -718,7 +704,16 @@ local function BindHealthTracker(targetPlayer)
             elseif hitPartName == "HumanoidRootPart" then
                 hitPartName = "Torso"
             end
-            task.spawn(ShowCustomHitNotification, targetPlayer.Name, hitPartName, damageCalculated)
+            
+            -- ค้นหาชื่ออาวุธที่ถืออยู่ (ถ้ามี)
+            local weaponName = "Unknown"
+            if targetPlayer.Character:FindFirstChildOfClass("Tool") then
+                weaponName = targetPlayer.Character:FindFirstChildOfClass("Tool").Name
+            elseif LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Tool") then
+                weaponName = LocalPlayer.Character:FindFirstChildOfClass("Tool").Name
+            end
+            
+            task.spawn(ShowCustomHitNotification, targetPlayer.Name, hitPartName, damageCalculated, weaponName)
         end
         lastHealth = hum.Health
     end)
@@ -851,7 +846,6 @@ RunService.RenderStepped:Connect(function()
         Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, _G.AimbotSmoothness)
     end
 
-    -- Update Target HUD Position relative to top-right corner dynamically based on sliders
     MainCanvas.Position = UDim2.new(1, -20 + _G.TargetHudPosX, 0, 20 + _G.TargetHudPosY)
 
     if (_G.SilentAimEnabled or _G.MobileAimbotEnabled) and CurrentTargetPlayer and CurrentTargetPlayer.Character and _G.TargetHudToggle then
@@ -872,7 +866,6 @@ RunService.RenderStepped:Connect(function()
             currentHudHealthLerp = currentHudHealthLerp + (pct - currentHudHealthLerp) * 0.12
             HealthBar.Size = UDim2.new(currentHudHealthLerp, 0, 1, 0)
             
-            -- Dynamic Health Bar Color System
             if currentHudHealthLerp > 0.6 then
                 HealthBar.BackgroundColor3 = _G.TargetHudHealthHigh
             elseif currentHudHealthLerp > 0.3 then
@@ -945,18 +938,6 @@ RunService.RenderStepped:Connect(function()
                 LowerTorso.RootJoint.Transform = CFrame.new()
             end
         end
-    end
-
-    if _G.ThirdPersonEnabled and LocalPlayer.Character then
-        LocalPlayer.CameraMode = Enum.CameraMode.Classic
-        for _, obj in ipairs(LocalPlayer.Character:GetDescendants()) do
-            if obj:IsA("BasePart") and obj.Name ~= "HumanoidRootPart" then
-                obj.LocalTransparencyModifier = 0
-            end
-        end
-        local cameraRotation = Camera.CFrame - Camera.CFrame.Position
-        local targetCameraPosition = Camera.Focus.Position - (Camera.CFrame.LookVector * _G.ThirdPersonDistance)
-        Camera.CFrame = cameraRotation + targetCameraPosition
     end
 
     for player, v in pairs(ESP_Storage) do
@@ -1082,7 +1063,7 @@ local Tabs = {
     Movement = Window:AddTab("Character"),
     World = Window:AddTab("World"),
     Addons = Window:AddTab("Misc"),
-    ['UI'] = Window:AddTab("Ui setting")
+    ['UI'] = Window:AddTab("UI setting")
 }
 
 local Options = getgenv().Options
@@ -1200,11 +1181,11 @@ local function RefreshDropdownValues()
     end
 end
 
-Players.PlayerRemoving:Connect(function()
+Players.PlayerRemoving:Connect(function(player)
     task.wait(0.1)
     RefreshDropdownValues()
 end)
-Players.PlayerAdded:Connect(function()
+Players.PlayerAdded:Connect(function(player)
     task.wait(0.1)
     RefreshDropdownValues()
 end)
@@ -1344,7 +1325,7 @@ end)
 
 local SoundLeftBox = Tabs.HitEffects:AddLeftGroupbox("Hit Sound")
 local OverlayLeftBox = Tabs.HitEffects:AddLeftGroupbox("Hit Overlay") 
-local NotifyRightBox = Tabs.HitEffects:AddRightGroupbox("Hit Notification")
+local NotifyRightBox = Tabs.HitEffects:AddRightGroupbox("Hit Notification Custom System")
 
 SoundLeftBox:AddDropdown("HitSoundDropdown", { Text = "Target Hit Sound", Values = {"None", "Spark", "Neverlose", "Rust", "Fatality", "Fatality 2", "Minecraft xp", "Minecraft", "Skeet"}, Default = 1, Multi = false })
 Options.HitSoundDropdown:OnChanged(function()
@@ -1366,54 +1347,50 @@ Options.HitOverlayColorPicker:OnChanged(function()
     _G.HitOverlayColor = Options.HitOverlayColorPicker.Value
 end)
 
-NotifyRightBox:AddToggle("HitNotifyToggle", { Text = "Enable Hit Notification (With Checkmark ✓)", Default = true })
+NotifyRightBox:AddToggle("HitNotifyToggle", { Text = "Enable Hit Notification", Default = false })
 Toggles.HitNotifyToggle:OnChanged(function()
     _G.HitNotifyEnabled = Toggles.HitNotifyToggle.Value
 end)
 
-NotifyRightBox:AddDropdown("HitNotifyStyleDropdown", { Text = "Notify Screen Alignment", Values = {"Left", "Right", "Center"}, Default = 2, Multi = false })
-Options.HitNotifyStyleDropdown:OnChanged(function()
-    _G.HitNotifyStyle = Options.HitNotifyStyleDropdown.Value
-end)
-
-NotifyRightBox:AddDropdown("HitNotifyAnimDropdown", { Text = "Open Animation Engine", Values = {"Smooth", "Tween Inside"}, Default = 1, Multi = false })
-Options.HitNotifyAnimDropdown:OnChanged(function()
-    _G.HitNotifyAnimType = Options.HitNotifyAnimDropdown.Value
-end)
-
-NotifyRightBox:AddSlider("HitNotifyTransparencySlider", { Text = "Box Transparency Override", Default = 0.0, Min = 0.0, Max = 0.9, Rounding = 2 })
-Options.HitNotifyTransparencySlider:OnChanged(function()
-    _G.HitNotifyTransparency = Options.HitNotifyTransparencySlider.Value
-end)
-
-NotifyRightBox:AddSlider("HitNotifyPosXSlider", { Text = "Manual Position X (%)", Default = 50, Min = 0, Max = 100, Rounding = 0 })
-Options.HitNotifyPosXSlider:OnChanged(function()
-    _G.HitNotifyPosX = Options.HitNotifyPosXSlider.Value
-end)
-
-NotifyRightBox:AddSlider("HitNotifyPosYSlider", { Text = "Manual Position Y (%)", Default = 80, Min = 0, Max = 100, Rounding = 0 })
-Options.HitNotifyPosYSlider:OnChanged(function()
-    _G.HitNotifyPosY = Options.HitNotifyPosYSlider.Value
-end)
-
-NotifyRightBox:AddSlider("HitNotifyDurationSlider", { Text = "Stay Screen Duration", Default = 2.5, Min = 0.2, Max = 3.0, Rounding = 1 })
+NotifyRightBox:AddSlider("HitNotifyDurationSlider", { Text = "Notification Duration (s)", Default = 2.5, Min = 0.5, Max = 5.0, Rounding = 1 })
 Options.HitNotifyDurationSlider:OnChanged(function()
     _G.HitNotifyDuration = Options.HitNotifyDurationSlider.Value
 end)
 
-NotifyRightBox:AddLabel("Notify Stroke Glow Color"):AddColorPicker("HitNotifyColorPicker", { Default = Color3.fromRGB(0, 255, 255) })
-Options.HitNotifyColorPicker:OnChanged(function()
-    _G.HitNotifyColor = Options.HitNotifyColorPicker.Value
-    for _, frame in ipairs(ActiveNotifications) do
-        local strokeObj = frame:FindFirstChildOfClass("UIStroke")
-        if strokeObj then strokeObj.Color = _G.HitNotifyColor end
-        local checkmarkObj = frame:FindFirstChild("CheckmarkIcon")
-        if checkmarkObj then checkmarkObj.TextColor3 = _G.HitNotifyColor end
+NotifyRightBox:AddSlider("HitNotifyTransparencySlider", { Text = "Notification Opacity/Transparency", Default = 0, Min = 0, Max = 1, Rounding = 2 })
+Options.HitNotifyTransparencySlider:OnChanged(function()
+    _G.HitNotifyTransparency = Options.HitNotifyTransparencySlider.Value
+end)
+
+NotifyRightBox:AddSlider("HitNotifyPosXSlider", { Text = "Position X Offset (%)", Default = 50, Min = 1, Max = 100, Rounding = 0 })
+Options.HitNotifyPosXSlider:OnChanged(function()
+    _G.HitNotifyPosX = Options.HitNotifyPosXSlider.Value
+    CenterNotifyContainer.Position = UDim2.new(_G.HitNotifyPosX / 100, 0, _G.HitNotifyPosY / 100, 0)
+end)
+
+NotifyRightBox:AddSlider("HitNotifyPosYSlider", { Text = "Position Y Offset (%)", Default = 25, Min = 1, Max = 100, Rounding = 0 })
+Options.HitNotifyPosYSlider:OnChanged(function()
+    _G.HitNotifyPosY = Options.HitNotifyPosYSlider.Value
+    CenterNotifyContainer.Position = UDim2.new(_G.HitNotifyPosX / 100, 0, _G.HitNotifyPosY / 100, 0)
+end)
+
+NotifyRightBox:AddDropdown("HitNotifyFontDropdown", { Text = "Hit Notify Custom Font", Values = RobloxFontsList, Default = table.find(RobloxFontsList, "Cartoon") or 1, Multi = false })
+Options.HitNotifyFontDropdown:OnChanged(function()
+    local SelectedFont = Enum.Font[Options.HitNotifyFontDropdown.Value]
+    if SelectedFont then
+        _G.HitNotifyFont = SelectedFont
     end
 end)
 
-local EspLeftBox = Tabs.ESP:AddLeftGroupbox("Master Visuals Control")
-local EspRightBox = Tabs.ESP:AddRightGroupbox("Visual Color Customization")
+NotifyRightBox:AddInput("CustomHitNotifyInput", { Placeholder = "Format: {name} | {part} | {dmg} | {weapon}", Text = "Hit {name} in the {part} for {dmg} dmg", Numeric = false, Finished = true })
+Options.CustomHitNotifyInput:OnChanged(function()
+    if Options.CustomHitNotifyInput.Value and Options.CustomHitNotifyInput.Value ~= "" then
+        _G.HitNotifyTemplate = Options.CustomHitNotifyInput.Value
+    end
+end)
+
+local EspLeftBox = Tabs.ESP:AddLeftGroupbox("Visuals Control")
+local EspRightBox = Tabs.ESP:AddRightGroupbox("Color Customization")
 
 EspLeftBox:AddToggle("MasterESPToggle", { Text = "Enable ESP", Default = false })
     :AddKeyPicker("MasterESPKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "Master ESP Bind" })
@@ -1498,8 +1475,9 @@ end)
 
 local LightingColorsGroup = Tabs.World:AddLeftGroupbox("Lighting Colors & Time")
 local WorldSkyboxBox = Tabs.World:AddLeftGroupbox("Custom Skybox System")
-local WorldFogBox = Tabs.World:AddLeftGroupbox("Fog Customization")
-local WorldRightBox = Tabs.World:AddRightGroupbox("Weather Modifier Engine")
+local WorldFogBox = Tabs.World:AddLeftGroupbox("World Fog Customization")
+local WorldAtmosphereBox = Tabs.World:AddLeftGroupbox("World Atmosphere Customization")
+local CameraDisplayBox = Tabs.World:AddRightGroupbox("Camera & Display Settings")
 
 LightingColorsGroup:AddSlider("ClockTimeSlider", { Text = "Game Clock Time", Default = Lighting.ClockTime, Min = 0, Max = 24, Rounding = 1 })
 Options.ClockTimeSlider:OnChanged(function()
@@ -1532,7 +1510,7 @@ Toggles.SkyboxToggle:OnChanged(function()
     UpdateSkybox()
 end)
 
-WorldSkyboxBox:AddDropdown("SkyboxDropdown", { Text = "Select Skybox Type", Values = {"Minecraft", "Minecraft 2", "Skyblox 1", "Skyblox 2", "Skyblox 3", "Skyblox 4"}, Default = 1, Multi = false })
+WorldSkyboxBox:AddDropdown("SkyboxDropdown", { Text = "Select Skybox", Values = {"Minecraft", "Minecraft 2", "Skyblox 1", "Skyblox 2", "Skyblox 3", "Skyblox 4"}, Default = 1, Multi = false })
 Options.SkyboxDropdown:OnChanged(function()
     _G.SelectedSkybox = Options.SkyboxDropdown.Value
     UpdateSkybox()
@@ -1553,11 +1531,65 @@ Options.FogEndSlider:OnChanged(function()
     Lighting.FogEnd = Options.FogEndSlider.Value
 end)
 
-WorldRightBox:AddSlider("BlurSlider", { Text = "World Blur Effect", Default = 1, Min = 1, Max = 5, Rounding = 1 })
+WorldAtmosphereBox:AddToggle("AtmosphereToggle", { Text = "Enable Atmosphere", Default = false })
+Toggles.AtmosphereToggle:OnChanged(function()
+    _G.AtmosphereEnabled = Toggles.AtmosphereToggle.Value
+    UpdateAtmosphere()
+end)
+
+WorldAtmosphereBox:AddLabel("Tint Color"):AddColorPicker("AtmosColorPicker", { Default = _G.AtmosphereColor })
+Options.AtmosColorPicker:OnChanged(function()
+    _G.AtmosphereColor = Options.AtmosColorPicker.Value
+    UpdateAtmosphere()
+end)
+
+WorldAtmosphereBox:AddLabel("Decay Color"):AddColorPicker("AtmosDecayPicker", { Default = _G.AtmosphereDecay })
+Options.AtmosDecayPicker:OnChanged(function()
+    _G.AtmosphereDecay = Options.AtmosDecayPicker.Value
+    UpdateAtmosphere()
+end)
+
+WorldAtmosphereBox:AddSlider("AtmosGlareSlider", { Text = "Glare Intensity", Default = _G.AtmosphereGlare, Min = 0.1, Max = 10, Rounding = 1 })
+Options.AtmosGlareSlider:OnChanged(function()
+    _G.AtmosphereGlare = Options.AtmosGlareSlider.Value
+    UpdateAtmosphere()
+end)
+
+WorldAtmosphereBox:AddSlider("AtmosHazeSlider", { Text = "Haze Density", Default = _G.AtmosphereHaze, Min = 0.1, Max = 10, Rounding = 1 })
+Options.AtmosHazeSlider:OnChanged(function()
+    _G.AtmosphereHaze = Options.AtmosHazeSlider.Value
+    UpdateAtmosphere()
+end)
+
+WorldAtmosphereBox:AddSlider("AtmosOffsetSlider", { Text = "Horizon Offset", Default = _G.AtmosphereOffset, Min = 0.01, Max = 1, Rounding = 2 })
+Options.AtmosOffsetSlider:OnChanged(function()
+    _G.AtmosphereOffset = Options.AtmosOffsetSlider.Value
+    UpdateAtmosphere()
+end)
+
+WorldAtmosphereBox:AddSlider("AtmosDensitySlider", { Text = "Atmosphere Density", Default = _G.AtmosphereDensity, Min = 0.01, Max = 1, Rounding = 2 })
+Options.AtmosDensitySlider:OnChanged(function()
+    _G.AtmosphereDensity = Options.AtmosDensitySlider.Value
+    UpdateAtmosphere()
+end)
+
+CameraDisplayBox:AddSlider("CustomFovSlider", { Text = "Custom Camera FOV", Default = 70, Min = 70, Max = 120, Rounding = 0 })
+Options.CustomFovSlider:OnChanged(function()
+    _G.CustomFOVValue = Options.CustomFovSlider.Value
+    Camera.FieldOfView = _G.CustomFOVValue
+end)
+
+Camera:GetPropertyChangedSignal("FieldOfView"):Connect(function()
+    if Camera.FieldOfView ~= _G.CustomFOVValue then
+        Camera.FieldOfView = _G.CustomFOVValue
+    end
+end)
+
+CameraDisplayBox:AddSlider("BlurSlider", { Text = "World Blur Effect", Default = 0, Min = 0, Max = 5, Rounding = 1 })
 Options.BlurSlider:OnChanged(function()
     local blurValue = Options.BlurSlider.Value
     local blurEffect = Lighting:FindFirstChild("hooksenseWorldBlur")
-    if blurValue > 1 then
+    if blurValue > 0 then
         if not blurEffect then
             blurEffect = Instance.new("BlurEffect")
             blurEffect.Name = "hooksenseWorldBlur"
@@ -1569,70 +1601,14 @@ Options.BlurSlider:OnChanged(function()
     end
 end)
 
-WorldRightBox:AddSlider("FpsCapSlider", { Text = "FPS Cap Limit", Default = 60, Min = 60, Max = 999, Rounding = 0 })
+CameraDisplayBox:AddSlider("FpsCapSlider", { Text = "FPS Cap Limit", Default = 60, Min = 60, Max = 999, Rounding = 0 })
 Options.FpsCapSlider:OnChanged(function()
     if setfpscap then setfpscap(Options.FpsCapSlider.Value) end
 end)
 
-WorldRightBox:AddDropdown("WeatherDropdown", { Text = "Select Weather Environment", Values = {"Clear Sky", "Rain Mode", "Snow Mode"}, Default = 1, Multi = false })
-Options.WeatherDropdown:OnChanged(function()
-    local SelectedWeather = Options.WeatherDropdown.Value
-    if CurrentWeatherEffect then
-        CurrentWeatherEffect:Destroy()
-        CurrentWeatherEffect = nil
-    end
-    if SelectedWeather == "Rain Mode" then
-        local assetId = "rbxassetid://11552439884"
-        local success, result = pcall(function() return game:GetObjects(assetId)[1] end)
-        if success and result and (result:IsA("ParticleEmitter") or result:IsA("Instance")) then
-            CurrentWeatherEffect = result:Clone()
-            CurrentWeatherEffect.Name = "hooksenseRainEmitter"
-            CurrentWeatherEffect.Parent = Camera
-        else
-            CurrentWeatherEffect = Instance.new("ParticleEmitter")
-            CurrentWeatherEffect.Name = "hooksenseRainEmitter"
-            CurrentWeatherEffect.Texture = assetId
-            CurrentWeatherEffect.Lifetime = NumberRange.new(2, 4)
-            CurrentWeatherEffect.Speed = NumberRange.new(40, 80)
-            CurrentWeatherEffect.Rate = 250
-            CurrentWeatherEffect.VelocityDirection = Enum.VelocityDirection.Top
-            CurrentWeatherEffect.Rotation = NumberRange.new(-15, 15)
-            CurrentWeatherEffect.Size = NumberSequence.new(1.5)
-            CurrentWeatherEffect.Transparency = NumberSequence.new(0.3)
-            CurrentWeatherEffect.Acceleration = Vector3.new(0, -50, 0)
-            CurrentWeatherEffect.Parent = Camera
-        end
-    elseif SelectedWeather == "Snow Mode" then
-        local assetId = "rbxassetid://4547273363"
-        local success, result = pcall(function() return game:GetObjects(assetId)[1] end)
-        if success and result and (result:IsA("ParticleEmitter") or result:IsA("Instance")) then
-            CurrentWeatherEffect = result:Clone()
-            CurrentWeatherEffect.Name = "hooksenseSnowEmitter"
-            CurrentWeatherEffect.Parent = Camera
-        else
-            CurrentWeatherEffect = Instance.new("ParticleEmitter")
-            CurrentWeatherEffect.Name = "hooksenseSnowEmitter"
-            CurrentWeatherEffect.Texture = assetId
-            CurrentWeatherEffect.Lifetime = NumberRange.new(4, 7)
-            CurrentWeatherEffect.Speed = NumberRange.new(10, 25)
-            CurrentWeatherEffect.Rate = 120
-            CurrentWeatherEffect.VelocityDirection = Enum.VelocityDirection.Top
-            CurrentWeatherEffect.Rotation = NumberRange.new(0, 360)
-            CurrentWeatherEffect.Size = NumberSequence.new(0.8)
-            CurrentWeatherEffect.Transparency = NumberSequence.new(0.1)
-            CurrentWeatherEffect.Acceleration = Vector3.new(0, -5, 0)
-            CurrentWeatherEffect.Parent = Camera
-        end
-    end
-end)
-
--- =============================================================================
--- [ADDONS TAB MODIFICATIONS - CONTROL TARGET HUD POSITION EXCLUSIVELY HERE]
--- =============================================================================
 local BlacklistPlayersGroup = Tabs.Addons:AddLeftGroupbox("loaders Scripts")
 local TargetHudConfigGroup = Tabs.Addons:AddRightGroupbox("Target HUD Settings")
 
--- Target HUD Controls
 TargetHudConfigGroup:AddToggle("TargetHudMasterToggle", { Text = "Enable Target HUD", Default = true })
 Toggles.TargetHudMasterToggle:OnChanged(function()
     _G.TargetHudToggle = Toggles.TargetHudMasterToggle.Value
@@ -1648,7 +1624,6 @@ Options.TargetHudPosYSlider:OnChanged(function()
     _G.TargetHudPosY = Options.TargetHudPosYSlider.Value
 end)
 
--- Gradient Border Colors
 TargetHudConfigGroup:AddLabel("Border Color 1"):AddColorPicker("HudBorderColor1Picker", { Default = Color3.fromRGB(0, 255, 100) })
 Options.HudBorderColor1Picker:OnChanged(function()
     _G.TargetHudBorderColor1 = Options.HudBorderColor1Picker.Value
@@ -1667,7 +1642,6 @@ Options.HudBorderColor2Picker:OnChanged(function()
     })
 end)
 
--- Health Status Colors (High, Mid, Low)
 TargetHudConfigGroup:AddLabel("Health Color: High (>60%)"):AddColorPicker("HudHealthHighPicker", { Default = Color3.fromRGB(0, 255, 100) })
 Options.HudHealthHighPicker:OnChanged(function()
     _G.TargetHudHealthHigh = Options.HudHealthHighPicker.Value
@@ -1682,7 +1656,6 @@ TargetHudConfigGroup:AddLabel("Health Color: Low (<30%)"):AddColorPicker("HudHea
 Options.HudHealthLowPicker:OnChanged(function()
     _G.TargetHudHealthLow = Options.HudHealthLowPicker.Value
 end)
-
 
 BlacklistPlayersGroup:AddButton({ Text = "load walkspeed", Func = function()
     local success, err = pcall(function()
@@ -1706,7 +1679,6 @@ BlacklistPlayersGroup:AddButton({ Text = "load drawing esp", Func = function()
     end
 end })
 
-
 local InterfaceGroup = Tabs['UI']:AddLeftGroupbox("Global Font Customization")
 local MenuGroup = Tabs['UI']:AddLeftGroupbox("Menu Settings")
 local AppearanceGroup = Tabs['UI']:AddRightGroupbox("UI Appearance Customization")
@@ -1725,12 +1697,6 @@ Options.GlobalFontDropdown:OnChanged(function()
         if espComponents.NameTag and espComponents.HealthTag then
             espComponents.NameTag.Font = SelectedFontEnum
             espComponents.HealthTag.Font = SelectedFontEnum
-        end
-    end
-    for _, notifyFrame in ipairs(ActiveNotifications) do
-        local textObj = notifyFrame:FindFirstChild("NotifyTextLabel")
-        if textObj and textObj:IsA("TextLabel") then
-            textObj.Font = SelectedFontEnum
         end
     end
 end)
