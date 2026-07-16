@@ -690,39 +690,26 @@ local function BindHealthTracker(targetPlayer)
     local lastHealth = hum.Health
     HealthConnection = hum:GetPropertyChangedSignal("Health"):Connect(function()
         if CurrentTargetPlayer == targetPlayer and hum.Health < lastHealth then
-            -- [แก้ไขจุดนี้เพื่อให้ทำงานเฉพาะตอนที่คุณยิงเท่านั้น]
-            -- เช็คระบบการสร้างความเสียหายว่าเกิดจากตัวเราโจมตี (เช็ค Tool ในมือเรา หรือเช็คปุ่มกดคลิกยิง/สัมผัสจอ)
-            local isMyShot = false
+            local damageCalculated = math.floor(lastHealth - hum.Health)
+            task.spawn(PlayHitSound)
+            task.spawn(TriggerHitOverlay) 
+            local hitPartName = _G.TargetPartMode
+            if hitPartName == "Root to Head" then
+                hitPartName = "Body/Head"
+            elseif hitPartName == "HumanoidRootPart" then
+                hitPartName = "Torso"
+            end
+            
+            -- [ระบบตรวจจับชื่ออาวุธที่ใช้โจมตีจาก Character Tool]
+            local weaponName = "Hands"
             if LocalPlayer.Character then
                 local heldTool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
-                -- ถืออาวุธอยู่ หรือมีการกดปุ่มโจมตี/สัมผัสจอลงไป
-                if heldTool or UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) or #UserInputService:GetTouchPointers() > 0 then
-                    isMyShot = true
+                if heldTool then
+                    weaponName = heldTool.Name
                 end
             end
-
-            if isMyShot then
-                local damageCalculated = math.floor(lastHealth - hum.Health)
-                task.spawn(PlayHitSound)
-                task.spawn(TriggerHitOverlay) 
-                local hitPartName = _G.TargetPartMode
-                if hitPartName == "Root to Head" then
-                    hitPartName = "Body/Head"
-                elseif hitPartName == "HumanoidRootPart" then
-                    hitPartName = "Torso"
-                end
-                
-                -- [ระบบตรวจจับชื่ออาวุธที่ใช้โจมตีจาก Character Tool]
-                local weaponName = "Hands"
-                if LocalPlayer.Character then
-                    local heldTool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
-                    if heldTool then
-                        weaponName = heldTool.Name
-                    end
-                end
-                
-                task.spawn(ShowCustomHitNotification, targetPlayer.Name, hitPartName, damageCalculated, weaponName)
-            end
+            
+            task.spawn(ShowCustomHitNotification, targetPlayer.Name, hitPartName, damageCalculated, weaponName)
         end
         lastHealth = hum.Health
     end)
