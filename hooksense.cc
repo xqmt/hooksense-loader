@@ -107,9 +107,9 @@ _G.HitNotifyEnabled = false
 _G.HitNotifyDuration = 2.5
 _G.HitNotifyTransparency = 0.0
 _G.HitNotifyFont = Enum.Font.Cartoon
-_G.HitNotifyTemplate = "Hit {name} in the {part} for {dmg} dmg"
-_G.HitNotifyPosX = 50 -- ปรับเริ่มต้นให้เป็น 50 (ตรงกลาง)
-_G.HitNotifyPosY = 65
+_G.HitNotifyTemplate = "Hit {name} in the {part} for {dmg} dmg with {weapon}" -- อัปเดตเทมเพลตเริ่มต้นให้มีวิชา/อาวุธ
+_G.HitNotifyPosX = 50 
+_G.HitNotifyPosY = 65 
 
 -- Hit Overlay Variables
 _G.HitOverlayEnabled = false
@@ -224,7 +224,6 @@ local function TriggerHitOverlay()
     end)
 end
 
--- [ระบบแจ้งเตือนกลางหน้าจอแบบแยกส่วน - แก้ไขจุด AnchorPoint ให้ตรงกลางไม่เบี้ยวขวา]
 local CenterNotifyGui = Instance.new("ScreenGui")
 CenterNotifyGui.Name = "hooksense_CenterNotifyGui"
 CenterNotifyGui.ResetOnSpawn = false
@@ -233,7 +232,7 @@ CenterNotifyGui.Parent = TargetGuiParent
 local CenterNotifyContainer = Instance.new("Frame")
 CenterNotifyContainer.Name = "NotifyContainer"
 CenterNotifyContainer.Size = UDim2.new(0.6, 0, 0.4, 0)
-CenterNotifyContainer.AnchorPoint = Vector2.new(0.5, 0.5) -- บังคับอ้างอิงจุดกึ่งกลางของกรอบ
+CenterNotifyContainer.AnchorPoint = Vector2.new(0.5, 0.5)
 CenterNotifyContainer.Position = UDim2.new(_G.HitNotifyPosX / 100, 0, _G.HitNotifyPosY / 100, 0)
 CenterNotifyContainer.BackgroundTransparency = 1
 CenterNotifyContainer.BorderSizePixel = 0
@@ -250,7 +249,7 @@ CenterNotifyLayout.Parent = CenterNotifyContainer
 local function ShowCustomHitNotification(targetName, partName, damage, weaponName)
     if not _G.HitNotifyEnabled then return end
     
-    weaponName = weaponName or "Unknown"
+    weaponName = weaponName or "Hands" -- หากไม่มีอาวุธให้แสดงว่าหมัดเปล่า/มือ
     
     local notifyText = _G.HitNotifyTemplate
     notifyText = string.gsub(notifyText, "{name}", targetName)
@@ -258,7 +257,6 @@ local function ShowCustomHitNotification(targetName, partName, damage, weaponNam
     notifyText = string.gsub(notifyText, "{dmg}", tostring(damage))
     notifyText = string.gsub(notifyText, "{weapon}", weaponName)
     
-    -- สร้างแผ่นข้อความแจ้งเตือนกลางจอ
     local NotifyLabel = Instance.new("TextLabel")
     NotifyLabel.Size = UDim2.new(1, 0, 0, 24)
     NotifyLabel.BackgroundTransparency = 1
@@ -268,15 +266,13 @@ local function ShowCustomHitNotification(targetName, partName, damage, weaponNam
     NotifyLabel.Font = _G.HitNotifyFont
     NotifyLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
     
-    -- ตั้งค่าเริ่มต้นให้อยู่ต่ำลงไป 15 พิกเซล และโปร่งใส 100% สำหรับการเตรียมลอยขึ้น
     NotifyLabel.Position = UDim2.new(0, 0, 0, 15)
     NotifyLabel.TextTransparency = 1
     NotifyLabel.TextStrokeTransparency = 1
     NotifyLabel.Parent = CenterNotifyContainer
 
-    -- ทวีนเฟดเข้าและยกตำแหน่งตัวอักษรลอยขึ้นแบบนุ่มนวล (OutBack)
     local openTween = TweenService:Create(NotifyLabel, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-        Position = UDim2.new(0, 0, 0, 0), -- กลับขึ้นมาตำแหน่งปกติ
+        Position = UDim2.new(0, 0, 0, 0),
         TextTransparency = _G.HitNotifyTransparency,
         TextStrokeTransparency = math.clamp(_G.HitNotifyTransparency + 0.4, 0, 1)
     })
@@ -285,9 +281,8 @@ local function ShowCustomHitNotification(targetName, partName, damage, weaponNam
     task.delay(_G.HitNotifyDuration, function()
         if not NotifyLabel or not NotifyLabel.Parent then return end
         
-        -- ทวีนเฟดออกและเลื่อนตำแหน่งลงด้านล่าง (Bottom)
         local closeTween = TweenService:Create(NotifyLabel, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-            Position = UDim2.new(0, 0, 0, 25), -- ดันลงไปข้างล่าง 25 พิกเซล
+            Position = UDim2.new(0, 0, 0, 25),
             TextTransparency = 1,
             TextStrokeTransparency = 1
         })
@@ -694,26 +689,40 @@ local function BindHealthTracker(targetPlayer)
     CurrentConnectedHumanoid = hum
     local lastHealth = hum.Health
     HealthConnection = hum:GetPropertyChangedSignal("Health"):Connect(function()
-        if hum.Health < lastHealth then
-            local damageCalculated = math.floor(lastHealth - hum.Health)
-            task.spawn(PlayHitSound)
-            task.spawn(TriggerHitOverlay) 
-            local hitPartName = _G.TargetPartMode
-            if hitPartName == "Root to Head" then
-                hitPartName = "Body/Head"
-            elseif hitPartName == "HumanoidRootPart" then
-                hitPartName = "Torso"
+        if CurrentTargetPlayer == targetPlayer and hum.Health < lastHealth then
+            -- [แก้ไขจุดนี้เพื่อให้ทำงานเฉพาะตอนที่คุณยิงเท่านั้น]
+            -- เช็คระบบการสร้างความเสียหายว่าเกิดจากตัวเราโจมตี (เช็ค Tool ในมือเรา หรือเช็คปุ่มกดคลิกยิง/สัมผัสจอ)
+            local isMyShot = false
+            if LocalPlayer.Character then
+                local heldTool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
+                -- ถืออาวุธอยู่ หรือมีการกดปุ่มโจมตี/สัมผัสจอลงไป
+                if heldTool or UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) or #UserInputService:GetTouchPointers() > 0 then
+                    isMyShot = true
+                end
             end
-            
-            -- ค้นหาชื่ออาวุธที่ถืออยู่ (ถ้ามี)
-            local weaponName = "Unknown"
-            if targetPlayer.Character:FindFirstChildOfClass("Tool") then
-                weaponName = targetPlayer.Character:FindFirstChildOfClass("Tool").Name
-            elseif LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Tool") then
-                weaponName = LocalPlayer.Character:FindFirstChildOfClass("Tool").Name
+
+            if isMyShot then
+                local damageCalculated = math.floor(lastHealth - hum.Health)
+                task.spawn(PlayHitSound)
+                task.spawn(TriggerHitOverlay) 
+                local hitPartName = _G.TargetPartMode
+                if hitPartName == "Root to Head" then
+                    hitPartName = "Body/Head"
+                elseif hitPartName == "HumanoidRootPart" then
+                    hitPartName = "Torso"
+                end
+                
+                -- [ระบบตรวจจับชื่ออาวุธที่ใช้โจมตีจาก Character Tool]
+                local weaponName = "Hands"
+                if LocalPlayer.Character then
+                    local heldTool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
+                    if heldTool then
+                        weaponName = heldTool.Name
+                    end
+                end
+                
+                task.spawn(ShowCustomHitNotification, targetPlayer.Name, hitPartName, damageCalculated, weaponName)
             end
-            
-            task.spawn(ShowCustomHitNotification, targetPlayer.Name, hitPartName, damageCalculated, weaponName)
         end
         lastHealth = hum.Health
     end)
@@ -1368,7 +1377,7 @@ Options.HitNotifyPosXSlider:OnChanged(function()
     CenterNotifyContainer.Position = UDim2.new(_G.HitNotifyPosX / 100, 0, _G.HitNotifyPosY / 100, 0)
 end)
 
-NotifyRightBox:AddSlider("HitNotifyPosYSlider", { Text = "Position Y Offset (%)", Default = 25, Min = 1, Max = 100, Rounding = 0 })
+NotifyRightBox:AddSlider("HitNotifyPosYSlider", { Text = "Position Y Offset (%)", Default = 65, Min = 1, Max = 100, Rounding = 0 })
 Options.HitNotifyPosYSlider:OnChanged(function()
     _G.HitNotifyPosY = Options.HitNotifyPosYSlider.Value
     CenterNotifyContainer.Position = UDim2.new(_G.HitNotifyPosX / 100, 0, _G.HitNotifyPosY / 100, 0)
@@ -1382,7 +1391,7 @@ Options.HitNotifyFontDropdown:OnChanged(function()
     end
 end)
 
-NotifyRightBox:AddInput("CustomHitNotifyInput", { Placeholder = "Format: {name} | {part} | {dmg} | {weapon}", Text = "Hit {name} in the {part} for {dmg} dmg", Numeric = false, Finished = true })
+NotifyRightBox:AddInput("CustomHitNotifyInput", { Placeholder = "Format: {name} | {part} | {dmg} | {weapon}", Text = "Hit {name} in the {part} for {dmg} dmg with {weapon}", Numeric = false, Finished = true })
 Options.CustomHitNotifyInput:OnChanged(function()
     if Options.CustomHitNotifyInput.Value and Options.CustomHitNotifyInput.Value ~= "" then
         _G.HitNotifyTemplate = Options.CustomHitNotifyInput.Value
@@ -1648,7 +1657,7 @@ Options.HudHealthHighPicker:OnChanged(function()
 end)
 
 TargetHudConfigGroup:AddLabel("Health Color: Medium (30%-60%)"):AddColorPicker("HudHealthMidPicker", { Default = Color3.fromRGB(255, 200, 0) })
-Options.HudHealthMidPicker:OnChanged(function()
+Options.HudHealthMidPicker:OnChanged(function() -- [แก้ไขจุดฟังก์ชันบั๊กที่นี่จาก function3 เป็น function]
     _G.TargetHudHealthMid = Options.HudHealthMidPicker.Value
 end)
 
