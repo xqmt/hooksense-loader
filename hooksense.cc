@@ -157,8 +157,13 @@ _G.AntiAimEnabled = false
 _G.AntiAimMode = "Spin"
 _G.AntiAimSpeed = 15
 _G.JitterMode = "Multi"
+
+-- Third Person & Motion Blur Variables
 _G.ThirdPersonEnabled = false
 _G.ThirdPersonDistance = 12
+_G.MotionBlurEnabled = false
+_G.MotionBlurIntensity = 1.5
+
 _G.BhopEnabled = false
 _G.BhopSpeedMultiplier = 1.5
 
@@ -772,11 +777,24 @@ Players.PlayerRemoving:Connect(function(player)
     RemoveESP(player)
 end)
 
+-- จัดการการรีเซ็ตกล้องเมื่อเลิกใช้งาน Third Person หรือสคริปต์หลุดโหลด
+local function ResetCamera()
+    Camera.CameraType = Enum.CameraType.Custom
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if hum then
+        hum.CameraOffset = Vector3.new(0, 0, 0)
+    end
+    LocalPlayer.CameraMaxZoomDistance = 128
+    LocalPlayer.CameraMinZoomDistance = 0.5
+end
+
 local RunService = game:GetService("RunService")
 local spinAngle = 0
 local jitterToggle = false
 local LastLoggedHudTargetId = 0
 local currentHudHealthLerp = 0 
+local LastCameraRotation = Camera.CFrame.LookVector
 
 RunService.RenderStepped:Connect(function()
     local Center = getScreenCenter()
@@ -934,6 +952,50 @@ RunService.RenderStepped:Connect(function()
                 LowerTorso.RootJoint.Transform = CFrame.new()
             end
         end
+    end
+
+    -- [แก้ไขระบบประมวลผลมุมมองบุคคลที่สามโฉมใหม่ - Third Person Smooth Fix]
+    if _G.ThirdPersonEnabled then
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            -- ใช้ CameraOffset ในการตั้งมุมกล้องเหนือหัว/ด้านข้างเล็กน้อย (ขยับ Y และ X)
+            hum.CameraOffset = Vector3.new(1.5, 2, 0)
+            -- ล็อคระยะกล้องตามระดับ Slider ที่ผู้ใช้เลือก
+            LocalPlayer.CameraMinZoomDistance = _G.ThirdPersonDistance
+            LocalPlayer.CameraMaxZoomDistance = _G.ThirdPersonDistance
+            
+            -- บังคับให้ใช้ CameraType.Custom เพื่อเปิดรับการปัดหน้าจอ/ลากเมาส์หมุนมุมกล้องได้อิสระ
+            if Camera.CameraType ~= Enum.CameraType.Custom then
+                Camera.CameraType = Enum.CameraType.Custom
+            end
+        end
+    else
+        -- ถ้าปิด Third Person ให้คืนค่ากลับเป็นมุมมองปกติทันที
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum and hum.CameraOffset ~= Vector3.new(0, 0, 0) then
+            ResetCamera()
+        end
+    end
+
+    -- [ระบบหันกล้องแล้วภาพเบลออัจฉริยะ - Motion Blur Dynamic System]
+    local blurEffect = Lighting:FindFirstChild("hooksenseMotionBlur")
+    if _G.MotionBlurEnabled then
+        if not blurEffect then
+            blurEffect = Instance.new("BlurEffect")
+            blurEffect.Name = "hooksenseMotionBlur"
+            blurEffect.Parent = Lighting
+        end
+        local currentLookVector = Camera.CFrame.LookVector
+        local angleDifference = math.acos(math.clamp(currentLookVector:Dot(LastCameraRotation), -1, 1))
+        local blurTarget = math.clamp(angleDifference * 45 * _G.MotionBlurIntensity, 0, 56)
+        
+        -- ปรับการตอบสนองให้สมูทสมจริง
+        blurEffect.Size = blurEffect.Size + (blurTarget - blurEffect.Size) * 0.25
+        LastCameraRotation = currentLookVector
+    else
+        if blurEffect then blurEffect:Destroy() end
     end
 
     for player, v in pairs(ESP_Storage) do
@@ -1569,7 +1631,7 @@ Options.AtmosDensitySlider:OnChanged(function()
     UpdateAtmosphere()
 end)
 
-CameraDisplayBox:AddSlider("CustomFovSlider", { Text = "Custom Camera FOV", Default = 70, Min = 70, Max = 120, Rounding = 0 })
+CameraDisplayBox:AddSlider("CustomFovSlider", { Text = "Custom FOV", Default = 70, Min = 70, Max = 120, Rounding = 0 })
 Options.CustomFovSlider:OnChanged(function()
     _G.CustomFOVValue = Options.CustomFovSlider.Value
     Camera.FieldOfView = _G.CustomFOVValue
@@ -1581,7 +1643,7 @@ Camera:GetPropertyChangedSignal("FieldOfView"):Connect(function()
     end
 end)
 
-CameraDisplayBox:AddSlider("BlurSlider", { Text = "World Blur Effect", Default = 0, Min = 0, Max = 5, Rounding = 1 })
+CameraDisplayBox:AddSlider("BlurSlider", { Text = "World Blur", Default = 0, Min = 0, Max = 5, Rounding = 1 })
 Options.BlurSlider:OnChanged(function()
     local blurValue = Options.BlurSlider.Value
     local blurEffect = Lighting:FindFirstChild("hooksenseWorldBlur")
@@ -1595,6 +1657,16 @@ Options.BlurSlider:OnChanged(function()
     else
         if blurEffect then blurEffect:Destroy() end
     end
+end)
+
+CameraDisplayBox:AddToggle("MotionBlurToggle", { Text = "EnableMotion Blur", Default = false })
+Toggles.MotionBlurToggle:OnChanged(function()
+    _G.MotionBlurEnabled = Toggles.MotionBlurToggle.Value
+end)
+
+CameraDisplayBox:AddSlider("MotionBlurIntensitySlider", { Text = "Motion Blur Intensity", Default = 1.5, Min = 0.5, Max = 5.0, Rounding = 1 })
+Options.MotionBlurIntensitySlider:OnChanged(function()
+    _G.MotionBlurIntensity = Options.MotionBlurIntensitySlider.Value
 end)
 
 CameraDisplayBox:AddSlider("FpsCapSlider", { Text = "FPS Cap Limit", Default = 60, Min = 60, Max = 999, Rounding = 0 })
@@ -1644,7 +1716,7 @@ Options.HudHealthHighPicker:OnChanged(function()
 end)
 
 TargetHudConfigGroup:AddLabel("Health Color: Medium (30%-60%)"):AddColorPicker("HudHealthMidPicker", { Default = Color3.fromRGB(255, 200, 0) })
-Options.HudHealthMidPicker:OnChanged(function() -- [แก้ไขจุดฟังก์ชันบั๊กที่นี่จาก function3 เป็น function]
+Options.HudHealthMidPicker:OnChanged(function() 
     _G.TargetHudHealthMid = Options.HudHealthMidPicker.Value
 end)
 
@@ -1653,7 +1725,7 @@ Options.HudHealthLowPicker:OnChanged(function()
     _G.TargetHudHealthLow = Options.HudHealthLowPicker.Value
 end)
 
-BlacklistPlayersGroup:AddButton({ Text = "load walkspeed", Func = function()
+BlacklistPlayersGroup:AddButton({ Text = "walkspeed", Func = function()
     local success, err = pcall(function()
         loadstring(game:HttpGet('https://raw.githubusercontent.com/19mdSkibidi/19sMooze-Mobile-Rework/refs/heads/main/Mooze%20Mob'))()
     end)
@@ -1664,7 +1736,7 @@ BlacklistPlayersGroup:AddButton({ Text = "load walkspeed", Func = function()
     end
 end })
 
-BlacklistPlayersGroup:AddButton({ Text = "load drawing esp", Func = function()
+BlacklistPlayersGroup:AddButton({ Text = "drawing esp", Func = function()
     local success, err = pcall(function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/xqmt/Drawing-Esp-/refs/heads/main/99"))()
     end)
@@ -1730,7 +1802,10 @@ MenuGroup:AddToggle("ShowCustomCursor", {Text = "Custom Cursor", Default = true,
 MenuGroup:AddDivider()
 MenuGroup:AddLabel("Menu bind"):AddKeyPicker("MenuKeybind", { Default = "RightShift", NoUI = true, Text = "Menu keybind" })
 
-MenuGroup:AddButton("Unload", function() Library:Unload() end)
+MenuGroup:AddButton("Unload", function() 
+    ResetCamera() -- คืนค่ากล้องตอน Unload สคริปต์เพื่อป้องกันบั๊กค้าง
+    Library:Unload() 
+end)
 Library.ToggleKeybind = Options.MenuKeybind
 Library:OnUnload(function()
     Library.Unloaded = true
