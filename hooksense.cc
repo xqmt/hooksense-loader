@@ -53,7 +53,7 @@ coroutine.wrap(function()
     if not success then
         warn("[Anti-RemoteBlock] Executor not support hookmetamethod. Skipped.")
     else
-        warn("[+] Matcha.cc : anticheat bypassed.")
+        warn("[+] hooksense.cc : anticheat bypassed.")
     end
 end)()
 
