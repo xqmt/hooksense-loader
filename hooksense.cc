@@ -17,7 +17,7 @@ end
 
 coroutine.wrap(function()
     local success, err = pcall(function()
-        -- ใช้ hookmetamethod ที่ปลอดภัยกว่าการยัดค่าใส่ Metatable ตรงๆ
+
         if hookmetamethod then
             local oldNamecall
             oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
