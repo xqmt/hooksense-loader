@@ -117,9 +117,6 @@ task.spawn(function()
     end
 end)
 
--- ============================================================================
--- [3] การประกาศค่าตัวแปร Global (_G) ทั้งหมดของระบบ
--- ============================================================================
 _G.SilentAimEnabled = false
 _G.BulletTPEnabled = false
 _G.WallCheckEnabled = false
@@ -244,9 +241,6 @@ _G.AtmosphereHaze = 1.2
 _G.AtmosphereOffset = 0.25
 _G.AtmosphereDensity = 0.35
 
--- ============================================================================
--- [4] การจัดเตรียม Instance ทางฝั่ง Game Environment
--- ============================================================================
 local Camera = workspace.CurrentCamera
 local Players = game.Players
 local LocalPlayer = Players.LocalPlayer
@@ -260,7 +254,6 @@ local ESP_Storage = {}
 
 local TargetGuiParent = LocalPlayer:WaitForChild("PlayerGui", 5) or (CoreGui:FindFirstChild("RobloxGui") or CoreGui)
 
--- [Hit Overlay Setup]
 local HitOverlayGui = Instance.new("ScreenGui")
 HitOverlayGui.Name = "hooksense_HitOverlayGui"
 HitOverlayGui.ResetOnSpawn = false
@@ -291,7 +284,6 @@ local function TriggerHitOverlay()
     end)
 end
 
--- [Hit Notification Setup]
 local CenterNotifyGui = Instance.new("ScreenGui")
 CenterNotifyGui.Name = "hooksense_CenterNotifyGui"
 CenterNotifyGui.ResetOnSpawn = false
@@ -432,7 +424,6 @@ end
 
 UpdateAtmosphere()
 
--- [Target HUD GUI Element Create]
 local TargetGui = Instance.new("ScreenGui")
 TargetGui.Name = "hooksenseTargetHudGui"
 TargetGui.ResetOnSpawn = false
@@ -638,9 +629,6 @@ local function isDead(humanoid, char)
     return false
 end
 
--- ============================================================================
--- [5] ระบบการคำนวณและล็อกเป้าหมาย (Aimbot & Target Tracking Logic)
--- ============================================================================
 local CurrentAimTargetPosition = nil
 local CurrentTargetPlayer = nil
 local CurrentTargetCharacter = nil
@@ -786,9 +774,6 @@ local function BindHealthTracker(targetPlayer)
     end)
 end
 
--- ============================================================================
--- [6] ระบบ ESP & Rendering Loop
--- ============================================================================
 local function CreateESP(player)
     local Billboard = Instance.new("BillboardGui")
     Billboard.Name = player.Name .. "_BillboardESP"
@@ -1176,9 +1161,6 @@ OldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(Self, ...)
     return OldNamecall(Self, ...)
 end))
 
--- ============================================================================
--- [8] การสร้าง Tabs เมนูและองค์ประกอบของ Linoria UI
--- ============================================================================
 local Tabs = {
     Main = Window:AddTab("Main"),
     Aimbot = Window:AddTab("Aimbot"),
@@ -1837,19 +1819,13 @@ Options.GlobalFontDropdown:OnChanged(function()
     end
 end)
 
--- ============================================================================
--- [9] ระบบลงทะเบียนและโหลดตัวจัดการธีม / เซฟไฟล์ (Theme & Save Manager Settings)
--- ============================================================================
 MenuGroup:AddButton({ Text = "Unload Script", Func = function() Library:Unload() end })
 MenuGroup:AddLabel("Menu Keybind"):AddKeyPicker("MenuKeybind", { Default = "End", NoUI = true, Text = "Menu Keybind" })
 
 ThemeManager:SetLibrary(Library)
 SaveManager:SetLibrary(Library)
-
 ThemeManager:SetFolder("hooksense")
 SaveManager:SetFolder("hooksense/configs")
-
 SaveManager:BuildConfigSection(Tabs['UI'])
 ThemeManager:ApplyToTab(Tabs['UI'])
-
 SaveManager:LoadAutoloadConfig()
