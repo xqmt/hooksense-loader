@@ -1,3 +1,65 @@
+if not game:IsLoaded() then 
+    game.Loaded:Wait()
+end
+
+-- ============================================================================
+-- [1] ตรวจสอบและโหลดระบบ Adonis Bypass (ถ้า Executor รองรับ getnamecallmethod)
+-- ============================================================================
+if getnamecallmethod then
+    local success, err = pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Pixeluted/adoniscries/main/Source.lua", true))()
+    end)
+end
+
+coroutine.wrap(function()
+    local success, err = pcall(function()
+        -- ใช้ hookmetamethod ที่ปลอดภัยกว่าการยัดค่าใส่ Metatable ตรงๆ
+        if hookmetamethod then
+            local oldNamecall
+            oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
+                if checkcaller() then return oldNamecall(self, ...) end
+                
+                local args = {...}
+                local method = getnamecallmethod()
+                
+                -- รายชื่อ Remotes ที่เป็นระบบตรวจจับ (Anti-Cheat) ที่ต้องการบล็อก
+                local blockedRemotes = {
+                    ["TeleportDetect"] = true,
+                    ["CHECKER_1"] = true,
+                    ["CHECKER"] = true,
+                    ["GUI_CHECK"] = true,
+                    ["OneMoreTime"] = true,
+                    ["checkingSPEED"] = true,
+                    ["BANREMOTE"] = true,
+                    ["PERMAIDBAN"] = true,
+                    ["KICKREMOTE"] = true,
+                    ["BR_KICKPC"] = true,
+                    ["BR_KICKMOBILE"] = true
+                }
+
+                if method == "FireServer" or method == "InvokeServer" then
+                    local remoteName = tostring(self.Name)
+                    if blockedRemotes[remoteName] or (args[1] and blockedRemotes[tostring(args[1])]) then
+                        return
+                    end
+                end
+
+                return oldNamecall(self, ...)
+            end))
+        end
+    end)
+
+    -- แสดงแจ้งเตือนผลลัพธ์การ Hook บน Console
+    if not success then
+        warn("[Anti-RemoteBlock] Executor not support hookmetamethod. Skipped.")
+    else
+        warn("[+] Matcha.cc : anticheat bypassed.")
+    end
+end)()
+
+-- ============================================================================
+-- [2] โหลดและตั้งค่าโครงสร้าง UI Library (LinoriaLib)
+-- ============================================================================
 local repo = "https://raw.githubusercontent.com/cloudsense-pub/UELinoriaLib/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
 local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
@@ -5,16 +67,16 @@ local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
 
 Library.ShowToggleFrameInKeybinds = true
 Library.ShowCustomCursor = true
-Library.NotifySide = "Right" -- กำหนดให้แสดงผลฝั่งขวาเป็นค่าเริ่มต้นของระบบ
+Library.NotifySide = "Right" 
 
 local Window = Library:CreateWindow({
     Title = "hooksenseㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ",
-    Center = true, -- ตั้งค่าให้หน้าต่างเปิดมาอยู่ตรงกลางหน้าจอ
+    Center = true, 
     AutoShow = true,
     Resizable = true,
     ShowCustomCursor = true,
     UnlockMouseWhileOpen = true,
-    NotifySide = "Right", -- แก้ไขจาก "Left" เป็น "Right" เพื่อไม่ให้ทับกับค่าข้างบน
+    NotifySide = "Right", 
     TabPadding = 8,
     MenuFadeTime = 0.2
 })
@@ -56,6 +118,9 @@ task.spawn(function()
     end
 end)
 
+-- ============================================================================
+-- [3] การประกาศค่าตัวแปร Global (_G) ทั้งหมดของระบบ
+-- ============================================================================
 _G.SilentAimEnabled = false
 _G.BulletTPEnabled = false
 _G.WallCheckEnabled = false
@@ -79,7 +144,6 @@ _G.PermLockEnabled = false
 _G.PermTargetList = {}
 _G.GlobalFontSetting = Enum.Font.Cartoon
 
--- Custom FOV Variable
 _G.CustomFOVValue = 70
 
 local RobloxFontsList = {}
@@ -102,16 +166,14 @@ local SoundIDs = {
     ["Skeet"] = "rbxassetid://80461265049096"
 }
 
--- [Hit Notify Settings Global & Custom]
 _G.HitNotifyEnabled = false 
 _G.HitNotifyDuration = 2.5
 _G.HitNotifyTransparency = 0.0
 _G.HitNotifyFont = Enum.Font.Cartoon
-_G.HitNotifyTemplate = "Hit {name} in the {part} for {dmg} dmg with {weapon}" -- อัปเดตเทมเพลตเริ่มต้นให้มีวิชา/อาวุธ
+_G.HitNotifyTemplate = "Hit {name} in the {part} for {dmg} dmg with {weapon}" 
 _G.HitNotifyPosX = 50 
 _G.HitNotifyPosY = 65 
 
--- Hit Overlay Variables
 _G.HitOverlayEnabled = false
 _G.HitOverlayColor = Color3.fromRGB(255, 0, 0)
 
@@ -158,7 +220,6 @@ _G.AntiAimMode = "Spin"
 _G.AntiAimSpeed = 15
 _G.JitterMode = "Multi"
 
--- Third Person & Motion Blur Variables
 _G.ThirdPersonEnabled = false
 _G.ThirdPersonDistance = 12
 _G.MotionBlurEnabled = false
@@ -167,7 +228,6 @@ _G.MotionBlurIntensity = 1.5
 _G.BhopEnabled = false
 _G.BhopSpeedMultiplier = 1.5
 
--- [TARGET HUD CONFIG GLOBAL VARIABLES]
 _G.TargetHudToggle = true
 _G.TargetHudPosX = 0
 _G.TargetHudPosY = 0
@@ -177,7 +237,6 @@ _G.TargetHudHealthHigh = Color3.fromRGB(0, 255, 100)
 _G.TargetHudHealthMid = Color3.fromRGB(255, 200, 0)
 _G.TargetHudHealthLow = Color3.fromRGB(255, 50, 50)
 
--- [ATMOSPHERE GLOBAL VARIABLES]
 _G.AtmosphereEnabled = false 
 _G.AtmosphereColor = Color3.fromRGB(178, 200, 255)
 _G.AtmosphereDecay = Color3.fromRGB(255, 178, 120)
@@ -186,6 +245,9 @@ _G.AtmosphereHaze = 1.2
 _G.AtmosphereOffset = 0.25
 _G.AtmosphereDensity = 0.35
 
+-- ============================================================================
+-- [4] การจัดเตรียม Instance ทางฝั่ง Game Environment
+-- ============================================================================
 local Camera = workspace.CurrentCamera
 local Players = game.Players
 local LocalPlayer = Players.LocalPlayer
@@ -199,6 +261,7 @@ local ESP_Storage = {}
 
 local TargetGuiParent = LocalPlayer:WaitForChild("PlayerGui", 5) or (CoreGui:FindFirstChild("RobloxGui") or CoreGui)
 
+-- [Hit Overlay Setup]
 local HitOverlayGui = Instance.new("ScreenGui")
 HitOverlayGui.Name = "hooksense_HitOverlayGui"
 HitOverlayGui.ResetOnSpawn = false
@@ -229,6 +292,7 @@ local function TriggerHitOverlay()
     end)
 end
 
+-- [Hit Notification Setup]
 local CenterNotifyGui = Instance.new("ScreenGui")
 CenterNotifyGui.Name = "hooksense_CenterNotifyGui"
 CenterNotifyGui.ResetOnSpawn = false
@@ -254,7 +318,7 @@ CenterNotifyLayout.Parent = CenterNotifyContainer
 local function ShowCustomHitNotification(targetName, partName, damage, weaponName)
     if not _G.HitNotifyEnabled then return end
     
-    weaponName = weaponName or "Hands" -- หากไม่มีอาวุธให้แสดงว่าหมัดเปล่า/มือ
+    weaponName = weaponName or "Hands"
     
     local notifyText = _G.HitNotifyTemplate
     notifyText = string.gsub(notifyText, "{name}", targetName)
@@ -369,6 +433,7 @@ end
 
 UpdateAtmosphere()
 
+-- [Target HUD GUI Element Create]
 local TargetGui = Instance.new("ScreenGui")
 TargetGui.Name = "hooksenseTargetHudGui"
 TargetGui.ResetOnSpawn = false
@@ -574,6 +639,9 @@ local function isDead(humanoid, char)
     return false
 end
 
+-- ============================================================================
+-- [5] ระบบการคำนวณและล็อกเป้าหมาย (Aimbot & Target Tracking Logic)
+-- ============================================================================
 local CurrentAimTargetPosition = nil
 local CurrentTargetPlayer = nil
 local CurrentTargetCharacter = nil
@@ -705,7 +773,6 @@ local function BindHealthTracker(targetPlayer)
                 hitPartName = "Torso"
             end
             
-            -- [ระบบตรวจจับชื่ออาวุธที่ใช้โจมตีจาก Character Tool]
             local weaponName = "Hands"
             if LocalPlayer.Character then
                 local heldTool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
@@ -720,6 +787,9 @@ local function BindHealthTracker(targetPlayer)
     end)
 end
 
+-- ============================================================================
+-- [6] ระบบ ESP & Rendering Loop
+-- ============================================================================
 local function CreateESP(player)
     local Billboard = Instance.new("BillboardGui")
     Billboard.Name = player.Name .. "_BillboardESP"
@@ -777,7 +847,6 @@ Players.PlayerRemoving:Connect(function(player)
     RemoveESP(player)
 end)
 
--- จัดการการรีเซ็ตกล้องเมื่อเลิกใช้งาน Third Person หรือสคริปต์หลุดโหลด
 local function ResetCamera()
     Camera.CameraType = Enum.CameraType.Custom
     local char = LocalPlayer.Character
@@ -954,24 +1023,18 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- [แก้ไขระบบประมวลผลมุมมองบุคคลที่สามโฉมใหม่ - Third Person Smooth Fix]
     if _G.ThirdPersonEnabled then
         local char = LocalPlayer.Character
         local hum = char and char:FindFirstChildOfClass("Humanoid")
         if hum then
-            -- ใช้ CameraOffset ในการตั้งมุมกล้องเหนือหัว/ด้านข้างเล็กน้อย (ขยับ Y และ X)
             hum.CameraOffset = Vector3.new(1.5, 2, 0)
-            -- ล็อคระยะกล้องตามระดับ Slider ที่ผู้ใช้เลือก
             LocalPlayer.CameraMinZoomDistance = _G.ThirdPersonDistance
             LocalPlayer.CameraMaxZoomDistance = _G.ThirdPersonDistance
-            
-            -- บังคับให้ใช้ CameraType.Custom เพื่อเปิดรับการปัดหน้าจอ/ลากเมาส์หมุนมุมกล้องได้อิสระ
             if Camera.CameraType ~= Enum.CameraType.Custom then
                 Camera.CameraType = Enum.CameraType.Custom
             end
         end
     else
-        -- ถ้าปิด Third Person ให้คืนค่ากลับเป็นมุมมองปกติทันที
         local char = LocalPlayer.Character
         local hum = char and char:FindFirstChildOfClass("Humanoid")
         if hum and hum.CameraOffset ~= Vector3.new(0, 0, 0) then
@@ -979,7 +1042,6 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- [ระบบหันกล้องแล้วภาพเบลออัจฉริยะ - Motion Blur Dynamic System]
     local blurEffect = Lighting:FindFirstChild("hooksenseMotionBlur")
     if _G.MotionBlurEnabled then
         if not blurEffect then
@@ -991,7 +1053,6 @@ RunService.RenderStepped:Connect(function()
         local angleDifference = math.acos(math.clamp(currentLookVector:Dot(LastCameraRotation), -1, 1))
         local blurTarget = math.clamp(angleDifference * 45 * _G.MotionBlurIntensity, 0, 56)
         
-        -- ปรับการตอบสนองให้สมูทสมจริง
         blurEffect.Size = blurEffect.Size + (blurTarget - blurEffect.Size) * 0.25
         LastCameraRotation = currentLookVector
     else
@@ -1074,6 +1135,9 @@ task.spawn(function()
     end
 end)
 
+-- ============================================================================
+-- [7] Silent Aim Hook Metamethod (รันแยกส่วนกับระบบ Anti-Remote)
+-- ============================================================================
 local OldNamecall
 OldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(Self, ...)
     if checkcaller() then return OldNamecall(Self, ...) end
@@ -1113,6 +1177,9 @@ OldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(Self, ...)
     return OldNamecall(Self, ...)
 end))
 
+-- ============================================================================
+-- [8] การสร้าง Tabs เมนูและองค์ประกอบของ Linoria UI
+-- ============================================================================
 local Tabs = {
     Main = Window:AddTab("Main"),
     Aimbot = Window:AddTab("Aimbot"),
@@ -1127,6 +1194,7 @@ local Tabs = {
 local Options = getgenv().Options
 local Toggles = getgenv().Toggles
 
+-- [Aimbot Tab Components]
 local MobileAimbotBox = Tabs.Aimbot:AddLeftGroupbox("Aimbot")
 local MobileAimbotSettings = Tabs.Aimbot:AddRightGroupbox("Aimbot Options")
 
@@ -1172,6 +1240,7 @@ Options.MobileTargetPartDropdown:OnChanged(function()
     _G.AimbotTargetPart = Options.MobileTargetPartDropdown.Value
 end)
 
+-- [Main Tab Components]
 local LeftGroupBox = Tabs.Main:AddLeftGroupbox("Silent Aim")
 local PermLockGroupBox = Tabs.Main:AddLeftGroupbox("Permanent Lock Settings")
 local TargetGroupBox = Tabs.Main:AddLeftGroupbox("Targeting Options")
@@ -1381,6 +1450,7 @@ Options.TracerLineOutlineColorPicker:OnChanged(function()
     _G.TracerLineOutlineColor = Options.TracerLineOutlineColorPicker.Value
 end)
 
+-- [HitEffects Tab Components]
 local SoundLeftBox = Tabs.HitEffects:AddLeftGroupbox("Hit Sound")
 local OverlayLeftBox = Tabs.HitEffects:AddLeftGroupbox("Hit Overlay") 
 local NotifyRightBox = Tabs.HitEffects:AddRightGroupbox("Hit Notification Custom System")
@@ -1447,6 +1517,7 @@ Options.CustomHitNotifyInput:OnChanged(function()
     end
 end)
 
+-- [ESP Tab Components]
 local EspLeftBox = Tabs.ESP:AddLeftGroupbox("Visuals Control")
 local EspRightBox = Tabs.ESP:AddRightGroupbox("Color Customization")
 
@@ -1482,6 +1553,7 @@ Options.NameColorPicker:OnChanged(function()
     _G.ColorName = Options.NameColorPicker.Value
 end)
 
+-- [Movement Tab Components]
 local MoveLeftBox = Tabs.Movement:AddLeftGroupbox("Anti Aim")
 local MoveRightBox = Tabs.Movement:AddRightGroupbox("Movement & Camera")
 
@@ -1531,6 +1603,7 @@ Options.BhopMultiplierSlider:OnChanged(function()
     _G.BhopSpeedMultiplier = Options.BhopMultiplierSlider.Value
 end)
 
+-- [World Tab Components]
 local LightingColorsGroup = Tabs.World:AddLeftGroupbox("Lighting Colors & Time")
 local WorldSkyboxBox = Tabs.World:AddLeftGroupbox("Custom Skybox System")
 local WorldFogBox = Tabs.World:AddLeftGroupbox("World Fog Customization")
@@ -1659,7 +1732,7 @@ Options.BlurSlider:OnChanged(function()
     end
 end)
 
-CameraDisplayBox:AddToggle("MotionBlurToggle", { Text = "EnableMotion Blur", Default = false })
+CameraDisplayBox:AddToggle("MotionBlurToggle", { Text = "Enable Motion Blur", Default = false })
 Toggles.MotionBlurToggle:OnChanged(function()
     _G.MotionBlurEnabled = Toggles.MotionBlurToggle.Value
 end)
@@ -1674,6 +1747,7 @@ Options.FpsCapSlider:OnChanged(function()
     if setfpscap then setfpscap(Options.FpsCapSlider.Value) end
 end)
 
+-- [Addons Tab Components]
 local BlacklistPlayersGroup = Tabs.Addons:AddLeftGroupbox("loaders Scripts")
 local TargetHudConfigGroup = Tabs.Addons:AddRightGroupbox("Target HUD Settings")
 
@@ -1747,6 +1821,7 @@ BlacklistPlayersGroup:AddButton({ Text = "drawing esp", Func = function()
     end
 end })
 
+-- [UI Tab Components]
 local InterfaceGroup = Tabs['UI']:AddLeftGroupbox("Global Font Customization")
 local MenuGroup = Tabs['UI']:AddLeftGroupbox("Menu Settings")
 local AppearanceGroup = Tabs['UI']:AddRightGroupbox("UI Appearance Customization")
@@ -1761,62 +1836,21 @@ Options.GlobalFontDropdown:OnChanged(function()
         UsernameLabel.Font = SelectedFontEnum
         UserIdLabel.Font = SelectedFontEnum
     end
-    for _, espComponents in pairs(ESP_Storage) do
-        if espComponents.NameTag and espComponents.HealthTag then
-            espComponents.NameTag.Font = SelectedFontEnum
-            espComponents.HealthTag.Font = SelectedFontEnum
-        end
-    end
 end)
 
-AppearanceGroup:AddDropdown("UIFontDropdown", { Text = "UI Custom Font", Values = RobloxFontsList, Default = table.find(RobloxFontsList, "Cartoon") or 1, Multi = false })
-Options.UIFontDropdown:OnChanged(function()
-    local targetFont = Enum.Font[Options.UIFontDropdown.Value]
-    if not targetFont then return end
-    if Library.ScreenGui then
-        for _, desc in ipairs(Library.ScreenGui:GetDescendants()) do
-            if desc:IsA("TextLabel") or desc:IsA("TextButton") or desc:IsA("TextBox") then
-                desc.Font = targetFont
-            end
-        end
-    else
-        if Library.Main then
-            for _, desc in ipairs(Library.Main:GetDescendants()) do
-                if desc:IsA("TextLabel") or desc:IsA("TextButton") or desc:IsA("TextBox") then
-                    desc.Font = targetFont
-                end
-            end
-        end
-        if Library.KeybindFrame then
-            for _, desc in ipairs(Library.KeybindFrame:GetDescendants()) do
-                if desc:IsA("TextLabel") or desc:IsA("TextButton") then
-                    desc.Font = targetFont
-                end
-            end
-        end
-    end
-end)
-
-MenuGroup:AddToggle("KeybindMenuOpen", { Default = false, Text = "Open Keybind Menu", Callback = function(value) Library.KeybindFrame.Visible = value end})
-MenuGroup:AddToggle("ShowCustomCursor", {Text = "Custom Cursor", Default = true, Callback = function(Value) Library.ShowCustomCursor = Value end})
-MenuGroup:AddDivider()
-MenuGroup:AddLabel("Menu bind"):AddKeyPicker("MenuKeybind", { Default = "RightShift", NoUI = true, Text = "Menu keybind" })
-
-MenuGroup:AddButton("Unload", function() 
-    ResetCamera() -- คืนค่ากล้องตอน Unload สคริปต์เพื่อป้องกันบั๊กค้าง
-    Library:Unload() 
-end)
-Library.ToggleKeybind = Options.MenuKeybind
-Library:OnUnload(function()
-    Library.Unloaded = true
-end)
+-- ============================================================================
+-- [9] ระบบลงทะเบียนและโหลดตัวจัดการธีม / เซฟไฟล์ (Theme & Save Manager Settings)
+-- ============================================================================
+MenuGroup:AddButton({ Text = "Unload Script", Func = function() Library:Unload() end })
+MenuGroup:AddLabel("Menu Keybind"):AddKeyPicker("MenuKeybind", { Default = "End", NoUI = true, Text = "Menu Keybind" })
 
 ThemeManager:SetLibrary(Library)
 SaveManager:SetLibrary(Library)
-SaveManager:IgnoreThemeSettings()
-SaveManager:SetIgnoreIndexes({ "MenuKeybind" })
+
 ThemeManager:SetFolder("hooksense")
 SaveManager:SetFolder("hooksense/configs")
+
 SaveManager:BuildConfigSection(Tabs['UI'])
 ThemeManager:ApplyToTab(Tabs['UI'])
+
 SaveManager:LoadAutoloadConfig()
