@@ -9,9 +9,6 @@ if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
--- ============================================================================
--- [1] ตรวจสอบและโหลดระบบ Adonis Bypass (ถ้า Executor รองรับ getnamecallmethod)
--- ============================================================================
 if getnamecallmethod then
     local success, err = pcall(function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/Pixeluted/adoniscries/main/Source.lua", true))()
@@ -29,7 +26,6 @@ coroutine.wrap(function()
                 local args = {...}
                 local method = getnamecallmethod()
                 
-                -- รายชื่อ Remotes ที่เป็นระบบตรวจจับ (Anti-Cheat) ที่ต้องการบล็อก
                 local blockedRemotes = {
                     ["TeleportDetect"] = true,
                     ["CHECKER_1"] = true,
@@ -56,7 +52,6 @@ coroutine.wrap(function()
         end
     end)
 
-    -- แสดงแจ้งเตือนผลลัพธ์การ Hook บน Console
     if not success then
         warn("[Anti-RemoteBlock] Executor not support hookmetamethod. Skipped.")
     else
@@ -64,9 +59,6 @@ coroutine.wrap(function()
     end
 end)()
 
--- ============================================================================
--- [2] โหลดและตั้งค่าโครงสร้าง UI Library (LinoriaLib)
--- ============================================================================
 local repo = "https://raw.githubusercontent.com/cloudsense-pub/UELinoriaLib/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
 local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
