@@ -80,6 +80,7 @@ task.spawn(function()
 end)
 
 _G.SilentAimEnabled = false
+_G.ResolverEnabled = false
 _G.BulletTPEnabled = false
 _G.WallCheckEnabled = false
 _G.TeamCheckEnabled = false
@@ -213,6 +214,7 @@ local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
 local DisplayNameLabel, UsernameLabel, UserIdLabel, AvatarImage
 local ESP_Storage = {}
+local TargetVelocityHistory = {}
 
 local TargetGuiParent = LocalPlayer:WaitForChild("PlayerGui", 5) or (CoreGui:FindFirstChild("RobloxGui") or CoreGui)
 
@@ -599,6 +601,26 @@ local interpolationProgress = 0
 
 task.spawn(function()
     while task.wait(0.01) do
+        -- Track True Velocity for Resolver Logic
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                local hrp = p.Character.HumanoidRootPart
+                local hist = TargetVelocityHistory[p.Name]
+                local currentTick = tick()
+                if not hist then
+                    TargetVelocityHistory[p.Name] = {Pos = hrp.Position, Time = currentTick, Velocity = Vector3.new(0, 0, 0)}
+                else
+                    local dt = currentTick - hist.Time
+                    if dt > 0.005 then
+                        local calculatedVel = (hrp.Position - hist.Pos) / dt
+                        hist.Velocity = calculatedVel
+                        hist.Pos = hrp.Position
+                        hist.Time = currentTick
+                    end
+                end
+            end
+        end
+
         if not _G.SilentAimEnabled and not _G.MobileAimbotEnabled then
             CurrentAimTargetPosition = nil
             CurrentTargetPlayer = nil
@@ -675,7 +697,26 @@ task.spawn(function()
                     local basePosition = targetPartObj.Position
                     if _G.AutoPredictionEnabled and root then
                         local ping = LocalPlayer:GetNetworkPing()
-                        basePosition = basePosition + (root.Velocity * ping * _G.PredictionValue)
+                        local targetedVelocity = root.Velocity
+
+                        if _G.ResolverEnabled then
+                            -- Harsh Resolver / Anti-Aim / Desync / Velocity Spoof Detection
+                            local isVelocitySpoofed = (targetedVelocity.Magnitude > 75) or 
+                                                      (math.abs(targetedVelocity.Y) > 50) or 
+                                                      (targetedVelocity.Magnitude < 0.1 and root.AssemblyLinearVelocity.Magnitude > 10) or
+                                                      (targetedVelocity.X ~= targetedVelocity.X) -- NaN Check
+                            
+                            if isVelocitySpoofed then
+                                local historyData = TargetVelocityHistory[TempPlayer and TempPlayer.Name or ""]
+                                if historyData and historyData.Velocity.Magnitude < 150 then
+                                    targetedVelocity = historyData.Velocity
+                                else
+                                    targetedVelocity = Vector3.new(0, 0, 0) -- Completely neutralize desync/anti-aim
+                                end
+                            end
+                        end
+
+                        basePosition = basePosition + (targetedVelocity * ping * _G.PredictionValue)
                     end
                     if _G.TargetPartMode == "Root to Head" and not _G.MobileAimbotEnabled then
                         if lastTarget ~= TempTargetChar then
@@ -1196,6 +1237,11 @@ LeftGroupBox:AddToggle("SilentAimToggle", { Text = "Enable Silent Aim", Default 
 
 Toggles.SilentAimToggle:OnChanged(function()
     _G.SilentAimEnabled = Toggles.SilentAimToggle.Value
+end)
+
+LeftGroupBox:AddToggle("ResolverToggle", { Text = "Enable Resolver", Default = false })
+Toggles.ResolverToggle:OnChanged(function()
+    _G.ResolverEnabled = Toggles.ResolverToggle.Value
 end)
 
 LeftGroupBox:AddToggle("LookAtToggle", { Text = "Enable Look at Target", Default = false })
