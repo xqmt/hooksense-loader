@@ -142,10 +142,12 @@ getgenv().SelectedSkybox = "Minecraft"
 local SkyboxIDs = {
     ["Minecraft"] = "rbxassetid://96736589365838",
     ["Minecraft 2"] = "rbxassetid://117301665698887",
-    ["Skyblox 1"] = "rbxassetid://4951222008",
-    ["Skyblox 2"] = "rbxassetid://4604073339",
-    ["Skyblox 3"] = "rbxassetid://8464073887",
-    ["Skyblox 4"] = "rbxassetid://90988519"
+    ["dark star"] = "rbxassetid://4951222008",
+    ["IDK"] = "rbxassetid://4604073339",
+    ["IDK"] = "rbxassetid://8464073887",
+    ["galaxy"] = "rbxassetid://11284918730",
+    ["dark"] = "rbxassetid://16476959885",
+    ["IDK"] = "rbxassetid://90988519"
 }
 
 getgenv().FOVCircleColor = Color3.fromRGB(255, 255, 255)
@@ -1250,7 +1252,7 @@ local LeftGroupBox = Tabs.Main:AddLeftGroupbox("Silent Aim")
 local PermLockGroupBox = Tabs.Main:AddLeftGroupbox("Permanent Lock Settings")
 local TargetGroupBox = Tabs.Main:AddLeftGroupbox("Targeting Options")
 local FOVGroupBox = Tabs.Main:AddRightGroupbox("FOV Settings")
-local FOVFillGroupBox = Tabs.Main:AddRightGroupbox("FOV Dynamic Gradient Fill")
+local FOVFillGroupBox = Tabs.Main:AddRightGroupbox("FOV Gradient Fill")
 local TracerGroupBox = Tabs.Main:AddRightGroupbox("Tracer Line Settings")
 
 LeftGroupBox:AddToggle("SilentAimToggle", { Text = "Enable Silent Aim", Default = false })
@@ -1651,7 +1653,7 @@ Toggles.SkyboxToggle:OnChanged(function()
     UpdateSkybox()
 end)
 
-WorldSkyboxBox:AddDropdown("SkyboxDropdown", { Text = "Select Skybox", Values = {"Minecraft", "Minecraft 2", "Skyblox 1", "Skyblox 2", "Skyblox 3", "Skyblox 4"}, Default = 1, Multi = false })
+WorldSkyboxBox:AddDropdown("SkyboxDropdown", { Text = "Select Skybox", Values = {"Minecraft", "Minecraft 2", "IDL", "IDK", "IDK", "galaxy", " dark", "IDK"}, Default = 1, Multi = false })
 Options.SkyboxDropdown:OnChanged(function()
     getgenv().SelectedSkybox = Options.SkyboxDropdown.Value
     UpdateSkybox()
