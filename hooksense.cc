@@ -13,51 +13,13 @@ if getnamecallmethod then
     local success, err = pcall(function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/Pixeluted/adoniscries/main/Source.lua", true))()
     end)
-end
-
-coroutine.wrap(function()
-    local success, err = pcall(function()
-
-        if hookmetamethod then
-            local oldNamecall
-            oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
-                if checkcaller() then return oldNamecall(self, ...) end
-                
-                local args = {...}
-                local method = getnamecallmethod()
-                
-                local blockedRemotes = {
-                    ["TeleportDetect"] = true,
-                    ["CHECKER_1"] = true,
-                    ["CHECKER"] = true,
-                    ["GUI_CHECK"] = true,
-                    ["OneMoreTime"] = true,
-                    ["checkingSPEED"] = true,
-                    ["BANREMOTE"] = true,
-                    ["PERMAIDBAN"] = true,
-                    ["KICKREMOTE"] = true,
-                    ["BR_KICKPC"] = true,
-                    ["BR_KICKMOBILE"] = true
-                }
-
-                if method == "FireServer" or method == "InvokeServer" then
-                    local remoteName = tostring(self.Name)
-                    if blockedRemotes[remoteName] or (args[1] and blockedRemotes[tostring(args[1])]) then
-                        return
-                    end
-                end
-
-                return oldNamecall(self, ...)
-            end))
-        end
-    end)
-
-    if not success then
-        warn("[Anti-RemoteBlock] Executor not support hookmetamethod. Skipped.")
+    
+    if success then
+        warn("[+] hooksense bypassed")
     else
-        warn("[+] hooksense.cc : anticheat bypassed.")
+        warn("[-] failed: " .. tostring(err))
     end
-end)()
+end
 
 local repo = "https://raw.githubusercontent.com/cloudsense-pub/UELinoriaLib/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
