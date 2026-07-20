@@ -146,7 +146,7 @@ local SkyboxIDs = {
     ["Skyblox 2"] = "rbxassetid://4604073339",
     ["Skyblox 3"] = "rbxassetid://8464073887",
     ["Skyblox 4"] = "rbxassetid://11284918730",
-    ["Skyblox 5"] = "rbxassetid://582303304",
+    ["Skyblox 5"] = "rbxassetid://5158681442",
     ["Skyblox 6"] = "rbxassetid://90988519"
 }
 
