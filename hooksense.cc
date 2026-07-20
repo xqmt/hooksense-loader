@@ -142,12 +142,12 @@ getgenv().SelectedSkybox = "Minecraft"
 local SkyboxIDs = {
     ["Minecraft"] = "rbxassetid://96736589365838",
     ["Minecraft 2"] = "rbxassetid://117301665698887",
-    ["dark star"] = "rbxassetid://4951222008",
-    ["IDK"] = "rbxassetid://4604073339",
-    ["IDK"] = "rbxassetid://8464073887",
+    ["IDK 1"] = "rbxassetid://4951222008",
+    ["IDK 2"] = "rbxassetid://4604073339",
+    ["IDK 3"] = "rbxassetid://8464073887",
     ["galaxy"] = "rbxassetid://11284918730",
     ["dark"] = "rbxassetid://16476959885",
-    ["IDK"] = "rbxassetid://90988519"
+    ["IDK 4"] = "rbxassetid://90988519"
 }
 
 getgenv().FOVCircleColor = Color3.fromRGB(255, 255, 255)
@@ -1653,7 +1653,7 @@ Toggles.SkyboxToggle:OnChanged(function()
     UpdateSkybox()
 end)
 
-WorldSkyboxBox:AddDropdown("SkyboxDropdown", { Text = "Select Skybox", Values = {"Minecraft", "Minecraft 2", "IDL", "IDK", "IDK", "galaxy", " dark", "IDK"}, Default = 1, Multi = false })
+WorldSkyboxBox:AddDropdown("SkyboxDropdown", { Text = "Select Skybox", Values = {"Minecraft", "Minecraft 2", "IDK 1", "IDK 2", "IDK 3", "galaxy", " dark", "IDK 4"}, Default = 1, Multi = false })
 Options.SkyboxDropdown:OnChanged(function()
     getgenv().SelectedSkybox = Options.SkyboxDropdown.Value
     UpdateSkybox()
