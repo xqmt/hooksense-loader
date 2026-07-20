@@ -122,6 +122,7 @@ local SoundIDs = {
     ["Fatality 2"] = "rbxassetid://17802817724",
     ["Minecraft xp"] = "rbxassetid://17148249625",
     ["Minecraft"] = "rbxassetid://135478009117226",
+    ["Crack"] = "rbxassetid://126409451844008",
     ["Skeet"] = "rbxassetid://80461265049096"
 }
 
@@ -1354,7 +1355,7 @@ Options.TransitionSpeedSlider:OnChanged(function()
     _G.TransitionSpeed = Options.TransitionSpeedSlider.Value
 end)
 
-TargetGroupBox:AddSlider("MaxDistanceSlider", { Text = "Max Lock Distance (Studs)", Default = 10000, Min = 1, Max = 100000, Rounding = 0 })
+TargetGroupBox:AddSlider("MaxDistanceSlider", { Text = "Max Lock Distance (Studs)", Default = 10000, Min = 1, Max = 99999999, Rounding = 0 })
 Options.MaxDistanceSlider:OnChanged(function()
     _G.MaxTargetDistance = Options.MaxDistanceSlider.Value
 end)
@@ -1444,7 +1445,7 @@ local SoundLeftBox = Tabs.HitEffects:AddLeftGroupbox("Hit Sound")
 local OverlayLeftBox = Tabs.HitEffects:AddLeftGroupbox("Hit Overlay") 
 local NotifyRightBox = Tabs.HitEffects:AddRightGroupbox("Hit Notification Custom System")
 
-SoundLeftBox:AddDropdown("HitSoundDropdown", { Text = "Target Hit Sound", Values = {"None", "Spark", "Neverlose", "Rust", "Fatality", "Fatality 2", "Minecraft xp", "Minecraft", "Skeet"}, Default = 1, Multi = false })
+SoundLeftBox:AddDropdown("HitSoundDropdown", { Text = "Target Hit Sound", Values = {"None", "Spark", "Neverlose", "Rust", "Fatality", "Fatality 2", "Minecraft xp", "Minecraft", "Crack", "Skeet"}, Default = 1, Multi = false })
 Options.HitSoundDropdown:OnChanged(function()
     _G.HitSoundMode = Options.HitSoundDropdown.Value
 end)
