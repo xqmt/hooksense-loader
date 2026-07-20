@@ -142,12 +142,12 @@ getgenv().SelectedSkybox = "Minecraft"
 local SkyboxIDs = {
     ["Minecraft"] = "rbxassetid://96736589365838",
     ["Minecraft 2"] = "rbxassetid://117301665698887",
-    ["IDK 1"] = "rbxassetid://4951222008",
-    ["IDK 2"] = "rbxassetid://4604073339",
-    ["IDK 3"] = "rbxassetid://8464073887",
+    ["Dark star"] = "rbxassetid://4951222008",
+    ["Cloudy"] = "rbxassetid://4604073339",
+    ["Realistic"] = "rbxassetid://8464073887",
     ["galaxy"] = "rbxassetid://11284918730",
-    ["dark"] = "rbxassetid://16476959885",
-    ["IDK 4"] = "rbxassetid://90988519"
+    ["Dark"] = "rbxassetid://16476959885",
+    ["idk"] = "rbxassetid://90988519"
 }
 
 getgenv().FOVCircleColor = Color3.fromRGB(255, 255, 255)
@@ -1653,7 +1653,7 @@ Toggles.SkyboxToggle:OnChanged(function()
     UpdateSkybox()
 end)
 
-WorldSkyboxBox:AddDropdown("SkyboxDropdown", { Text = "Select Skybox", Values = {"Minecraft", "Minecraft 2", "IDK 1", "IDK 2", "IDK 3", "galaxy", " dark", "IDK 4"}, Default = 1, Multi = false })
+WorldSkyboxBox:AddDropdown("SkyboxDropdown", { Text = "Select Skybox", Values = {"Minecraft", "Minecraft 2", "IDK 1", "IDK 2", "IDK 3", "galaxy", "dark", "IDK 4"}, Default = 1, Multi = false })
 Options.SkyboxDropdown:OnChanged(function()
     getgenv().SelectedSkybox = Options.SkyboxDropdown.Value
     UpdateSkybox()
@@ -1763,7 +1763,7 @@ end)
 local BlacklistPlayersGroup = Tabs.Addons:AddLeftGroupbox("loaders Scripts")
 local TargetHudConfigGroup = Tabs.Addons:AddRightGroupbox("Target HUD Settings")
 
-TargetHudConfigGroup:AddToggle("TargetHudMasterToggle", { Text = "Enable Target HUD", Default = true })
+TargetHudConfigGroup:AddToggle("TargetHudMasterToggle", { Text = "Enable Target HUD", Default = false })
 Toggles.TargetHudMasterToggle:OnChanged(function()
     getgenv().TargetHudToggle = Toggles.TargetHudMasterToggle.Value
 end)
