@@ -145,9 +145,7 @@ local SkyboxIDs = {
     ["Skyblox 1"] = "rbxassetid://4951222008",
     ["Skyblox 2"] = "rbxassetid://4604073339",
     ["Skyblox 3"] = "rbxassetid://8464073887",
-    ["Skyblox 4"] = "rbxassetid://11284918730",
-    ["Skyblox 5"] = "rbxassetid://113702652",
-    ["Skyblox 6"] = "rbxassetid://90988519"
+    ["Skyblox 4"] = "rbxassetid://90988519"
 }
 
 getgenv().FOVCircleColor = Color3.fromRGB(255, 255, 255)
@@ -190,7 +188,7 @@ getgenv().MotionBlurIntensity = 1.5
 getgenv().BhopEnabled = false
 getgenv().BhopSpeedMultiplier = 1.5
 
-getgenv().TargetHudToggle = false
+getgenv().TargetHudToggle = true
 getgenv().TargetHudPosX = 0
 getgenv().TargetHudPosY = 0
 getgenv().TargetHudBorderColor1 = Color3.fromRGB(0, 255, 100)
@@ -561,8 +559,8 @@ FOVFillGradient.Parent = FOVFillFrame
 
 -- [External-like Premium FOV Draw]
 local FOVCircleOutline = Drawing.new("Circle")
-FOVCircleOutline.Thickness = 2.0 
-FOVCircleOutline.NumSides = 144  
+FOVCircleOutline.Thickness = 2.0 -- เงาด้านหลังหนาขึ้นเล็กน้อยเพื่อความคมชัด
+FOVCircleOutline.NumSides = 144  -- 144 ด้านเนียนกริบไม่มีเหลี่ยมสไตล์ External overlay
 FOVCircleOutline.Filled = false
 FOVCircleOutline.Visible = getgenv().FOVVisible
 
@@ -1148,6 +1146,9 @@ task.spawn(function()
     end
 end)
 
+-- ============================================================================
+-- [7] Silent Aim Hook Metamethod (รันแยกส่วนกับระบบ Anti-Remote)
+-- ============================================================================
 local OldNamecall
 OldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(Self, ...)
     if checkcaller() then return OldNamecall(Self, ...) end
@@ -1252,7 +1253,7 @@ local LeftGroupBox = Tabs.Main:AddLeftGroupbox("Silent Aim")
 local PermLockGroupBox = Tabs.Main:AddLeftGroupbox("Permanent Lock Settings")
 local TargetGroupBox = Tabs.Main:AddLeftGroupbox("Targeting Options")
 local FOVGroupBox = Tabs.Main:AddRightGroupbox("FOV Settings")
-local FOVFillGroupBox = Tabs.Main:AddRightGroupbox("FOV Gradient Fill")
+local FOVFillGroupBox = Tabs.Main:AddRightGroupbox("FOV Dynamic Gradient Fill")
 local TracerGroupBox = Tabs.Main:AddRightGroupbox("Tracer Line Settings")
 
 LeftGroupBox:AddToggle("SilentAimToggle", { Text = "Enable Silent Aim", Default = false })
@@ -1367,6 +1368,7 @@ PermLockGroupBox:AddButton({Text = "Target Player", Func = function()
     end
 end})
 
+-- [เพิ่มตัวเลือก Closet ลงใน Dropdown เรียบร้อย]
 TargetGroupBox:AddDropdown("TargetPartDropdown", { Text = "Target Lock Part", Values = {"Head", "HumanoidRootPart", "Root to Head", "Closet"}, Default = 1, Multi = false })
 Options.TargetPartDropdown:OnChanged(function()
     getgenv().TargetPartMode = Options.TargetPartDropdown.Value
@@ -1653,7 +1655,7 @@ Toggles.SkyboxToggle:OnChanged(function()
     UpdateSkybox()
 end)
 
-WorldSkyboxBox:AddDropdown("SkyboxDropdown", { Text = "Select Skybox", Values = {"Minecraft", "Minecraft 2", "Skyblox 1", "Skyblox 2", "Skyblox 3", "Skyblox 4", "Skyblox 5", "Skyblox 6"}, Default = 1, Multi = false })
+WorldSkyboxBox:AddDropdown("SkyboxDropdown", { Text = "Select Skybox", Values = {"Minecraft", "Minecraft 2", "Skyblox 1", "Skyblox 2", "Skyblox 3", "Skyblox 4"}, Default = 1, Multi = false })
 Options.SkyboxDropdown:OnChanged(function()
     getgenv().SelectedSkybox = Options.SkyboxDropdown.Value
     UpdateSkybox()
