@@ -11,7 +11,7 @@ end
 
 if getnamecallmethod then
     local success, err = pcall(function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/xqmt/hooksense-loader/refs/heads/main/bypass", true))()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/RioCorp/Adonis-AntiCheat-Bypass/refs/heads/main/Bypass.lua", true))()
     end)
     
     if success then
