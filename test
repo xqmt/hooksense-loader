@@ -1,3 +1,26 @@
+-- =============================================================
+--  _    _  ____   ____  _  _  ____  _____ _   _  ____  _____ 
+-- | |  | |/ __ \ / __ \| |/ // ___|| ____| \ | |/ ___|| ____|
+-- | |__| | |  | | |  | | ' / \___ \|  _| |  \| \___ \|  _|   
+-- |  __  | |__| | |__| | . \  ___) | |___| |\  |___) | |___  
+-- |_|  |_|\____/ \____/|_|\_\|____/|_____|_| \_|____/|_____|
+-- =============================================================
+if not game:IsLoaded() then 
+    game.Loaded:Wait()
+end
+
+if getnamecallmethod then
+    local success, err = pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Pixeluted/adoniscries/main/Source.lua", true))()
+    end)
+    
+    if success then
+        warn("[+] hooksense bypassed")
+    else
+        warn("[-] failed: " .. tostring(err))
+    end
+end
+
 local repo = "https://raw.githubusercontent.com/cloudsense-pub/UELinoriaLib/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
 local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
